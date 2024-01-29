@@ -14,4 +14,6 @@ def begin_simulation(simulator):
     with open('../SetUp/environment_file', 'r') as environment_file:
         environment_data = environment_file.read()
 
-
+        # TODO: COME FACCIO A RIPETERE QUESTA COSA PER OGNI MAPPA? forse lo dovrei fare esternamente
+        # todo: per ogni mappa possibile
+        # todo: devi fare il controllo di dov'e' la stazione base

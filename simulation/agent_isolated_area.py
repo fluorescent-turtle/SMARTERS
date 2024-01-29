@@ -1,9 +1,9 @@
 import mesa
 
 
-class GrassTassel(mesa.Agent):
+class IsolatedTassel(mesa.Agent):
     """
-        A grass tassel.
+        An isolated grass tassel.
 
         Attributes:
             x, y: Grid coordinates
