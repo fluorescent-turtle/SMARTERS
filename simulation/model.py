@@ -32,8 +32,6 @@ class Simulator(mesa.Model):
     def __init__(self, dimension_tassel, width, height, min_height_blocked, max_height_blocked,
                  min_width_blocked, max_width_blocked, num_blocked_squares, angle_x, angle_y):
 
-        # num_blocked_areas non e' necessario, perche' si puo' ricavare
-
         """
         Create a new model.
 
