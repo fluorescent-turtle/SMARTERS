@@ -311,14 +311,14 @@ class Simulator(mesa.Model):
 
         # If position for base station isn't known
         if position[0] < 0:
-            biggest_area = self.find_largest_blocked_area()
+            biggest_area, coords = self.find_largest_blocked_area()
             # Calculate position for the base station
             self.base_station_position = calculate_position(
                 self,
                 center,
-                [],
+                coords,
                 self.width,
-                self.length,  # todo: devo riempire biggest area coords
+                self.length,
             )
             # Add the base station to the grid
             self.add_resource(
@@ -415,17 +415,23 @@ class Simulator(mesa.Model):
         Find the largest blocked area among all blocked areas.
 
         Returns:
-            Agent or None: The largest blocked area agent, or None if no blocked areas are present.
+            tuple or None: A tuple containing the largest blocked area agent and its coordinates,
+                           or None if no blocked areas are present.
         """
         largest_blocked_area = None
         largest_area = 0
-        for cell_content in self.grid.coord_iter():
+        largest_coords = None
+        for cell_content, x, y in self.grid.coord_iter():
             if isinstance(cell_content, SquaredBlockedArea) or isinstance(cell_content, CircledBlockedArea):
                 area = get_blocked_area_size(cell_content)
                 if area > largest_area:
                     largest_area = area
                     largest_blocked_area = cell_content
-        return largest_blocked_area
+                    largest_coords = (x, y)
+        if largest_blocked_area:
+            return largest_blocked_area, largest_coords
+        else:
+            return None
 
     def can_place(self, pos):
         """
