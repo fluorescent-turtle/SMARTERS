@@ -2,7 +2,6 @@ import mesa
 
 
 class Robot(mesa.Agent):
-
     def __init__(self, pos, model):
         """
         Create a new robot.
@@ -17,6 +16,6 @@ class Robot(mesa.Agent):
     def step(self):
         if self.condition == "Cutting":
             """for neighbor in self.model.grid.iter_neighbors(self.pos, True):
-                if neighbor.condition == "Fine":
-                    neighbor.condition = "On Fire"""
+            if neighbor.condition == "Fine":
+                neighbor.condition = "On Fire"""
             self.condition = "Cut"

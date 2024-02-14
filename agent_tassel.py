@@ -1,16 +1,19 @@
+import unittest
+
 import mesa
 
 
-class IsolatedTassel(mesa.Agent):
+class GrassTassel(mesa.Agent):
     """
-        An isolated grass tassel.
+    A grass tassel.
 
-        Attributes:
-            x, y: Grid coordinates
-            condition: Can be "High", "Cutting", or "Cut"
-            unique_id: (x,y) tuple.
-        """
-    def __init__(self, pos, model, dimension):
+    Attributes:
+        x, y: Grid coordinates
+        condition: Can be "High", "Cutting", or "Cut"
+        unique_id: (x,y) tuple.
+    """
+
+    def __init__(self, pos, model, dimension, condition):
         """
         Create a new tassel.
         Args:
@@ -23,6 +26,6 @@ class IsolatedTassel(mesa.Agent):
         self.condition = "High"
         self.dimension = dimension
 
-    def step(self): #todo: non sono sicura abbia senso
+    def step(self):
         if self.condition == "Cutting":
             self.condition = "Cut"

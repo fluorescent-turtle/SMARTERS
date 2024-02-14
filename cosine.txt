@@ -1,0 +1,14 @@
+# Place a grass tassel agent
+        for contents, (x, y) in self.grid.coord_iter():
+            new_tassel = GrassTassel((x, y), self, tassel_dim)
+            new_tassel.condition = "High"
+            self.grid.place_agent(new_tassel, (x, y))
+            self.schedule.add(new_tassel)
+
+
+
+        entrance_x, entrance_y = (random.randrange(1,
+                                                   environment_data['isolated_area_width'] - 1),
+                                  random.randrange(1, environment_data['isolated_area_length'] - 1)
+                                  )
+
