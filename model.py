@@ -33,9 +33,9 @@ class MovingAgent(Agent):
             resources (list): List of resource positions.
         """
         super().__init__(unique_id, model)
-        self.pos = pos
-        self.grid = grid
-        self.resources = resources
+        self.pos = pos  # Current position of the agent
+        self.grid = grid  # Reference to the grid space
+        self.resources = resources  # List of resource positions
 
     def get_empty_cells(self):
         """
@@ -52,6 +52,7 @@ class MovingAgent(Agent):
         """
         Move the agent to a neighboring cell if available.
         """
+        # Get all possible moves (neighbors) where the agent can move to
         possible_moves = [
             move
             for move in self.grid.get_neighborhood(
@@ -59,8 +60,10 @@ class MovingAgent(Agent):
             )
             if move not in self.resources
         ]
+        # Choose a random move from the list of possible moves
         new_position = random.choice(possible_moves)
         print("NEW AGENT POSITION ----- ", new_position)
+        # Move the agent to the new position on the grid
         self.grid.move_agent(self, new_position)
 
 
@@ -136,6 +139,25 @@ def calculate_position(self, center, biggest_area_coords, width, height):
         return random_coords
 
 
+def get_blocked_area_size(blocked_area):
+    """
+    Calculate the size (area) of a blocked area.
+
+    Parameters:
+        blocked_area (Agent): The blocked area agent.
+
+    Returns:
+        int: The size (area) of the blocked area.
+    """
+
+    if isinstance(blocked_area, SquaredBlockedArea):
+        return blocked_area.width * blocked_area.length
+    elif isinstance(blocked_area, CircledBlockedArea):
+        return math.pi * blocked_area.radius ** 2
+    else:
+        return 0  # Return 0 for unsupported blocked area types
+
+
 class Simulator(mesa.Model):
     """
     A model representing the behavior of a lawnmower robot.
@@ -173,6 +195,7 @@ class Simulator(mesa.Model):
             center (boolean): Center of the isolated area.
         """
         super().__init__()
+        # Initialize attributes from parameters
         self.environment_data = environment_data
         self.robot_data = robot_data
         self.width = environment_data["width"]
@@ -249,6 +272,7 @@ class Simulator(mesa.Model):
                 self.add_resource(circled_blocked_area, x, y)
                 self.resources.append((x, y))
 
+        # Populate the grid with perimeter guidelines
         for i in range(int(self.width)):
             for j in range(int(self.length)):
                 if self.grid.is_cell_empty((i, j)):
@@ -285,22 +309,49 @@ class Simulator(mesa.Model):
                     else:
                         print(f"Warning: no empty cell found near cell ({i}, {j}).")
 
-        self.base_station_position = calculate_position(
-            self, center, [], self.width, self.length
-        )
-        self.add_resource(
-            BaseStation(self.base_station_position, self.base_station_position[0], self)
-        )
-        self.schedule.add(
-            BaseStation(self.base_station_position, self.base_station_position[0], self)
-        )
-        self.resources.append(self.base_station_position)
+        # If position for base station isn't known
+        if position[0] < 0:
+            biggest_area = self.find_largest_blocked_area()
+            # Calculate position for the base station
+            self.base_station_position = calculate_position(
+                self,
+                center,
+                [],
+                self.width,
+                self.length,  # todo: devo riempire biggest area coords
+            )
+            # Add the base station to the grid
+            self.add_resource(
+                BaseStation(
+                    self.base_station_position, self.base_station_position[0], self
+                ),
+                self.base_station_position[0],
+                self.base_station_position[1],
+            )
+            self.schedule.add(
+                BaseStation(
+                    self.base_station_position, self.base_station_position[0], self
+                )
+            )
+            self.resources.append(self.base_station_position)
+        # If position for base station is known
+        else:
+            # Add the base station to the grid
+            self.add_resource(
+                BaseStation((position[0], position[1]), position[0], self),
+                position[0],
+                position[1],
+            )
+            self.schedule.add(
+                BaseStation((position[0], position[1]), position[0], self)
+            )
+            self.resources.append(self.base_station_position)
 
+        # Draw a line from the base station to a random tassel
+        random_tassel = random.choice(self.isolated_area_tassels)
         if position[0] > 0:
-            random_tassel = random.choice(self.isolated_area_tassels)
             self.draw_line(position[0], position[1], random_tassel[0], random_tassel[1])
         else:
-            random_tassel = random.choice(self.isolated_area_tassels)
             self.draw_line(
                 self.base_station_position[0],
                 self.base_station_position[1],
@@ -310,6 +361,7 @@ class Simulator(mesa.Model):
 
         print(self.resources)
 
+        # Add a moving agent to the grid
         if self.grid.is_cell_empty((4, 5)):
             moving_agent = MovingAgent(1, self, self.grid, (4, 5), self.resources)
             self.add_resource(moving_agent, 4, 5)
@@ -357,6 +409,23 @@ class Simulator(mesa.Model):
                         )
                         self.resources.append((cx + i, cx + j))
                         self.isolated_area_tassels.append((cx + i, cx + j))
+
+    def find_largest_blocked_area(self):
+        """
+        Find the largest blocked area among all blocked areas.
+
+        Returns:
+            Agent or None: The largest blocked area agent, or None if no blocked areas are present.
+        """
+        largest_blocked_area = None
+        largest_area = 0
+        for cell_content in self.grid.coord_iter():
+            if isinstance(cell_content, SquaredBlockedArea) or isinstance(cell_content, CircledBlockedArea):
+                area = get_blocked_area_size(cell_content)
+                if area > largest_area:
+                    largest_area = area
+                    largest_blocked_area = cell_content
+        return largest_blocked_area
 
     def can_place(self, pos):
         """
