@@ -12,3 +12,147 @@
                                   random.randrange(1, environment_data['isolated_area_length'] - 1)
                                   )
 
+--------------------
+    def get_circles(self):
+        """
+        Get the positions of all circular isolated areas.
+
+        Returns:
+            list: List of positions.
+        """
+        return [
+            c.pos
+            for c in self.grid.get_cell_list_contents
+            if isinstance(c, CircularIsolation)
+        ]
+
+    def get_blocked_circles(self):
+        """
+        Get the positions of all circular isolated areas.
+
+        Returns:
+            list: List of positions.
+        """
+        return [
+            c.pos
+            for c in self.grid.get_cell_list_contents()
+            if isinstance(c, CircledBlockedArea)
+        ]
+
+
+        ------------__>in can_place
+         """and not any(
+                    euclidean_distance(pos, c) <= self.radius for c in self.get_circles()
+                )"""
+
+
+         ---------------> base station
+         # Add the base station to the grid
+        self.add_base_station(self.position)
+
+        adjacent_position = (self.position[0] + 1, position[1] + 1)
+        if self.within_bounds(adjacent_position) and not self.grid.is_cell_occupied(
+            adjacent_position
+        ):
+            self.add_resource(
+                BaseStation(
+                    (adjacent_position[0], adjacent_position[1]), position[0], self
+                ),
+                adjacent_position[0],
+                adjacent_position[1],
+            )
+            self.resources.append(adjacent_position)
+            self.schedule.add(
+                BaseStation(
+                    (adjacent_position[0], adjacent_position[1]), position[0], self
+                )
+            )
+        else:
+            print("Adjacent position is outside the grid or already occupied.")
+
+
+            # todo: problem
+        biggest_area, coords = self.find_largest_blocked_area()
+        # Calculate position for the base station
+        self.base_station_position = calculate_position(
+            self, center, coords, self.width, self.length
+        )
+        # Add the base station to the grid
+        add_two_base_stations(self, self.position)
+
+
+-------------------> moving agent
+# todo: problem
+        # Add a moving agent to the grid
+        if position[0] < 0:
+            if self.grid.is_cell_empty(
+                (self.base_station_position[0] + 1, self.base_station_position[1] + 1)
+            ):
+                moving_agent = MovingAgent(
+                    1,
+                    self,
+                    self.grid,
+                    (
+                        self.base_station_position[0] + 1,
+                        self.base_station_position[1] + 1,
+                    ),
+                    self.resources,
+                )
+                self.add_resource(
+                    moving_agent,
+                    self.base_station_position[0] + 1,
+                    self.base_station_position[1] + 1,
+                )
+                print("IF DOPO IL MOVING AGENT ---------------- DOPO LA ADD RESOURCE")
+                self.schedule.add(moving_agent)
+            else:
+                print("self.base_statoin_position is not empty")
+        else:
+            # Definire gli offset per le direzioni cardinali (sopra, sotto, a sinistra, a destra)
+            directions = [(0, 1), (0, -1), (-1, 0), (1, 0)]
+
+            # Scorrere tutte le direzioni possibili
+            for direction in directions:
+                # Calcolare la nuova posizione applicando l'offset alla posizione iniziale
+                if position[0] == 0 and direction[0] < 0:
+                    new_x = position[0]
+                else:
+                    new_x = position[0] + direction[0]
+                if position[1] == 0 and direction[1] < 0:
+                    new_y = position[1]
+                else:
+                    new_y = position[1] + direction[1]
+
+                new_position = (new_x, new_y)
+                print("NEW POSITION: ", new_position)
+                # Controllare se la nuova posizione è all'interno della griglia e vuota
+                if self.within_bounds(new_position) and self.grid.is_cell_empty(
+                    new_position
+                ):
+                    print("New position of the moving agent:", new_position)
+                    moving_agent = MovingAgent(
+                        1, self, self.grid, new_position, self.resources
+                    )
+                    self.add_resource(moving_agent, new_position[0], new_position[1])
+                    self.schedule.add(moving_agent)
+                    break  # Fermarsi quando viene trovata una casella libera
+                else:
+                    print("No empty cell found around position.")
+
+
+
+
+
+  -----------------------------------___> guide lines
+  # Draw a line from the base station to a random tassel
+        random_tassel = random.choice(self.isolated_area_tassels)
+        # todo: problem
+        if position[0] >= 0:
+            self.draw_line(position[0], position[1], random_tassel[0], random_tassel[1])
+        else:
+            self.draw_line(
+                self.base_station_position[0],
+                self.base_station_position[1],
+                random_tassel[0],
+                random_tassel[1],
+            )

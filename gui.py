@@ -1,3 +1,7 @@
+"""
+This script defines functionalities for simulating a scenario using tkinter.
+"""
+
 import json
 import random
 import tkinter as tk
@@ -7,106 +11,71 @@ from model import Simulator
 
 
 def begin_simulation(tassel_dim, repetitions, cycle):
-    # read data from json file
+    """
+    Begin the simulation with the specified parameters.
+
+    Parameters:
+        tassel_dim (float): The dimension of the tassel in meters.
+        repetitions (int): The number of repetitions.
+        cycle (int): The cutting cycle time in hours.
+    """
+    # Read data from JSON files
     with open("../SetUp/robot_file", "r") as robot_file:
         robot_data = json.load(robot_file)
     with open("../SetUp/environment_file", "r") as environment_file:
         environment_data = json.load(environment_file)
 
+    # Start the simulation
     simulation = Simulator(
         robot_data=robot_data,
         environment_data=environment_data,
         tassel_dim=tassel_dim,
         repetitions=repetitions,
         cycle=cycle,
-        position=(
-            random.randint(1, int(environment_data["width"])),
-            random.randint(1, int(environment_data["length"])),
-        ),
-        center=False,
     )
-    # test_agent = TestAgent(1, simulation, [],"High")
-    # simulation.schedule.add(test_agent)
     simulation.run_model()
-    """for i in [1, 2]:  # needed for isolated area
-        for j in [1, 2]:  # needed for isolated area
-
-            # case: base station on the perimeter
-            # begin simulation
-            Simulator(
-                robot_data=robot_data,
-                environment_data=environment_data,
-                tassel_dim=tassel_dim,
-                repetitions=repetitions,
-                cycle=cycle,
-                position=(
-                    random.randint(1, environment_data["width"]),
-                    random.randint(1, environment_data["length"]),
-                ),
-                center=False,
-            )
-
-            # case: base station on the biggest blocked area
-            # begin simulation
-            Simulator(
-                robot_data=robot_data,
-                environment_data=environment_data,
-                tassel_dim=tassel_dim,
-                repetitions=repetitions,
-                cycle=cycle,
-                position=(-1, -1),
-                center=False,
-            )
-            # case: base station on the biggest blocked (center)
-            # begin simulation
-            Simulator(
-                robot_data=robot_data,
-                environment_data=environment_data,
-                tassel_dim=tassel_dim,
-                repetitions=repetitions,
-                cycle=cycle,
-                position=(-1, -1),
-                center=True,
-            )"""
 
 
 class SimulatorWindow(Tk):
     """
-    Main window
+    Main window for the simulator application.
     """
 
     def __init__(self):
+        """
+        Initialize the main window.
+        """
         super().__init__()
 
-        # window title
+        # Set window title
         self.title("Smarters")
 
         window_width = 500
         window_height = 500
 
-        # get the screen dimension
+        # Get screen dimensions
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
 
-        # find the center point
+        # Calculate center position
         center_x = int(screen_width / 2 - window_width / 2)
         center_y = int(screen_height / 2 - window_height / 2)
 
-        # set the position of the window to the center of the screen
+        # Set window position to the center of the screen
         self.geometry(f"{window_width}x{window_height}+{center_x}+{center_y}")
 
-        # parameters entry
+        # Create parameters entry frame
         frame = ttk.Frame(self)
         frame.place(anchor="center")
 
-        # field options
+        # Define options for fields
         options = {"padx": 20, "pady": 20}
 
-        # frame label
+        # Add frame label
         frame_label = ttk.Label(self, text="Simulator features", font=("Arial", 18))
         frame_label.grid(row=1, column=0, columnspan=3, **options)
 
-        # tassel's dimension
+        # Add tassel's dimension entry
         first_label = ttk.Label(frame, text="Dimension of the tassel (m): ")
         first_label.grid(column=0, row=2, sticky="W", **options)
 
@@ -116,7 +85,7 @@ class SimulatorWindow(Tk):
         tassel_dim_entry.grid(column=1, row=2, **options)
         tassel_dim_entry.focus()
 
-        # cutting cycle time
+        # Add cutting cycle time entry
         second_label = ttk.Label(frame, text="Cutting cycle time (h): ")
         second_label.grid(column=0, row=3, sticky="W", **options)
 
@@ -125,7 +94,7 @@ class SimulatorWindow(Tk):
         cutting_cycle_entry.grid(column=1, row=3, **options)
         cutting_cycle_entry.focus()
 
-        # repetition's times
+        # Add repetition's times entry
         third_label = ttk.Label(frame, text="Repetition times: ")
         third_label.grid(column=0, row=4, sticky="W", **options)
 
@@ -134,14 +103,17 @@ class SimulatorWindow(Tk):
         repetitions_entry.grid(column=1, row=4, **options)
         repetitions_entry.focus()
 
-        # Next button
+        # Add Next button
         next_button = tk.Button(self, text="Next", command=self.click_next)
         next_button.place(x=350, y=400)
 
-        # add padding to the frame and show it
+        # Add padding to the frame and show it
         frame.grid(padx=20, pady=20)
 
     def click_next(self):
+        """
+        Proceed to the next step in the simulation.
+        """
         for widget in self.winfo_children():
             widget.destroy()
         self.destroy()
