@@ -190,7 +190,7 @@ def _add_guideline(grid, coord, resources):
         coord (tuple): The coordinates of the guideline.
         resources (list): List of resources on the grid.
     """
-    guide_line = GuideLine(coord, coord[0] * coord[1])
+    guide_line = GuideLine(coord)
     add_resource(grid, guide_line, *coord)
     resources.append(coord)
 
@@ -205,7 +205,7 @@ def add_base_station(grid, position, resources):
         resources (list): List of resources on the grid.
     """
     if within_bounds(grid, position) and not grid.is_cell_occupied(position):
-        base_station = BaseStation((position[0], position[1]), position[0])
+        base_station = BaseStation((position[0], position[1]))
         add_resource(grid, base_station, position[0], position[1])
         resources.append(position)
 
@@ -377,7 +377,6 @@ def fill_circular_area(
                         add_resource(
                             grid,
                             CircularIsolation(
-                                next(counter),
                                 p,
                                 radius,
                                 (2 * math.pi * radius),
@@ -436,7 +435,7 @@ def fill_circular_blocked_area(self, start_x: int, start_y: int, radius: int):
                     point = Point(midpoint.x + i, midpoint.y + j)
                     if self.can_blocked_place(point):
                         new_resource = CircledBlockedArea(
-                            point, radius, random.randint(0, 256)
+                            point, radius
                         )
                         self.add_resource(new_resource, point.x, point.y)
                         self.resources.append(point)
@@ -560,8 +559,7 @@ def populate_blocked_areas(
         square = SquaredBlockedArea(
             (x, y),
             random.randint(min_width_blocked, max_width_blocked),  # noqa: E231
-            random.randint(min_height_blocked, max_height_blocked),
-            random.randint(0, 256),
+            random.randint(min_height_blocked, max_height_blocked)
         )
         add_resource(grid, square, x, y)
         resources.append((x, y))
@@ -570,7 +568,7 @@ def populate_blocked_areas(
     for _ in range(num_circles):
         (x, y) = generate_valid_agent_position(grid)
         circle = CircledBlockedArea(
-            (x, y), random.randint(1, 10), random.randint(0, 256)
+            (x, y), random.randint(1, 10)
         )
         add_resource(grid, circle, x, y)
         resources.append((x, y))
