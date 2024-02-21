@@ -1,20 +1,109 @@
-"""
-This script defines functionalities for simulating a scenario using tkinter.
-"""
-
+import itertools
 import json
-import random
 import tkinter as tk
-from tkinter import Tk, ttk
-
+from tkinter import ttk, Tk
+from mesa.space import SingleGrid
 from model import Simulator
+from utils import (
+    initialize_isolated_area,
+    populate_blocked_areas,
+    populate_perimeter_guidelines,
+    add_base_station,
+    generate_pair,
+    find_largest_blocked_area,
+    calculate_position,
+)
+
+
+def create_random_grid(environment_data, tassel_dim):
+    """
+    Create a random grid based on environment data and tassel dimensions.
+
+    Args:
+        environment_data (dict): Data related to the environment.
+        tassel_dim (float): The dimension of the tassel in meters.
+
+    Returns:
+        SingleGrid: The generated grid.
+        list: List of resources in the grid.
+    """
+    # Set environment parameters
+    width = environment_data["width"]
+    length = environment_data["length"]
+    isolated_shape = environment_data["isolated_area_shape"]
+    min_height_blocked = environment_data["min_height_square"]
+    max_height_blocked = environment_data["max_height_square"]
+    min_width_blocked = environment_data["min_width_square"]
+    max_width_blocked = environment_data["max_width_square"]
+    num_blocked_squares = environment_data["num_blocked_squares"]
+    num_blocked_circles = environment_data["num_blocked_circles"]
+    radius = environment_data["radius"]
+    isolated_area_width = environment_data["isolated_area_width"]
+    isolated_area_length = environment_data["isolated_area_length"]
+    isolated_area_tassels = []
+
+    # Initialize model components
+    grid = SingleGrid(int(width), int(length), torus=False)
+    resources = []
+    counter = itertools.count
+
+    # Add isolated area to the grid
+    initialize_isolated_area(
+        grid,
+        isolated_shape,
+        isolated_area_width,
+        isolated_area_length,
+        environment_data,
+        isolated_area_tassels,
+        radius,
+        tassel_dim,
+        resources,
+        counter,
+    )
+
+    # Populate the grid with blocked areas
+    populate_blocked_areas(
+        resources,
+        num_blocked_squares,
+        num_blocked_circles,
+        grid,
+        environment_data,
+        min_width_blocked,
+        max_width_blocked,
+        min_height_blocked,
+        max_height_blocked,
+    )
+
+    populate_perimeter_guidelines(width, length, grid, resources)
+
+    return grid, resources
+
+
+def run_model_with_parameters(robot_data, grid, resources, repetitions, cycles):
+    """
+    Run the simulation with the specified parameters.
+
+    Args:
+        robot_data (dict): Data related to the robot.
+        grid (Grid): The grid on which the simulation will be run.
+        resources (list): List of resources to be used in the simulation.
+        repetitions (int): Number of repetitions.
+        cycles (int): Number of cycles per repetition.
+
+    Returns:
+        None
+    """
+    for repetition in range(repetitions):
+        for cycle in range(cycles):
+            # Start the simulation
+            simulation = Simulator(grid, robot_data, resources)
 
 
 def begin_simulation(tassel_dim, repetitions, cycle):
     """
     Begin the simulation with the specified parameters.
 
-    Parameters:
+    Args:
         tassel_dim (float): The dimension of the tassel in meters.
         repetitions (int): The number of repetitions.
         cycle (int): The cutting cycle time in hours.
@@ -25,15 +114,36 @@ def begin_simulation(tassel_dim, repetitions, cycle):
     with open("../SetUp/environment_file", "r") as environment_file:
         environment_data = json.load(environment_file)
 
-    # Start the simulation
-    simulation = Simulator(
-        robot_data=robot_data,
-        environment_data=environment_data,
-        tassel_dim=tassel_dim,
-        repetitions=repetitions,
-        cycle=cycle,
+    grid, resources = create_random_grid(environment_data, tassel_dim)
+
+    # Add base station to the perimeter
+    add_base_station(
+        grid,
+        generate_pair(environment_data["width"], environment_data["length"]),
+        resources,
     )
-    simulation.run_model()
+
+    run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)
+
+    # Add base station to the biggest blocked area randomly
+    biggest_area, coords = find_largest_blocked_area(grid)
+
+    # Calculate position for the base station
+    base_station_position = calculate_position(
+        grid, False, coords, environment_data["width"], environment_data["length"]
+    )
+
+    add_base_station(grid, base_station_position, resources)
+    run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)
+
+    # Add base station to the biggest area nearest to the center
+    # Calculate position for the base station
+    base_station_position1 = calculate_position(
+        grid, True, coords, environment_data["width"], environment_data["length"]
+    )
+
+    add_base_station(grid, base_station_position1, resources)
+    run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)
 
 
 class SimulatorWindow(Tk):

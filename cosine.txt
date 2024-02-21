@@ -46,7 +46,7 @@
                 )"""
 
 
-         ---------------> base station
+--------------------------------------------------------------------------------------------------------------------------------------------------------- base station
          # Add the base station to the grid
         self.add_base_station(self.position)
 
@@ -143,7 +143,7 @@
 
 
 
-  -----------------------------------___> guide lines
+  ---------------------------------------------> guide lines
   # Draw a line from the base station to a random tassel
         random_tassel = random.choice(self.isolated_area_tassels)
         # todo: problem
