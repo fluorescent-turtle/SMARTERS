@@ -106,26 +106,9 @@ def find_empty_neighbor(grid, coords):
     return coords
 
 
-def calculate_position(grid, center, biggest_area_coords, width, height):
-    """
-    Calculate the position for initializing an agent on the grid.
+# todo: funzione da correggereb
+def calculate_base_station_position(grid, center, biggest_area_coords, width, height):
 
-    Args:
-        grid (SingleGrid): The grid space.
-        center (bool): Whether to place the agent near the center of the grid.
-        biggest_area_coords (list[tuple]): Coordinates of the biggest area on the grid.
-        width (int): The width of the grid.
-        height (int): The height of the grid.
-
-    Returns:
-        tuple: The coordinates of the position to initialize the agent.
-
-    Notes:
-        This function calculates the position to initialize an agent on the grid. If 'center' is True,
-        it finds the center coordinates of the grid and selects the empty neighbor of the biggest area
-        closest to the center. Otherwise, it randomly chooses one of the coordinates of the biggest area
-        and selects its empty neighbor as the position to initialize the agent.
-    """
     if center:
         center_coords = find_grid_center(width, height)
         least_diff_tuple = tuple_with_least_difference(
@@ -134,6 +117,7 @@ def calculate_position(grid, center, biggest_area_coords, width, height):
         least_diff_tuple = find_empty_neighbor(grid, least_diff_tuple)
         return least_diff_tuple
     else:
+        # todo: questo va corretto
         random_coords = random.choice(biggest_area_coords)
         random_coords = find_empty_neighbor(grid, random_coords)
         return random_coords
@@ -167,18 +151,21 @@ def populate_perimeter_guidelines(width, length, grid, resources):
         grid (mesa.space.Grid): The grid space.
         resources (list): List of resources on the grid.
     """
-    rows = [[0, length], [0, width], [length - 1, width]]
-    cols = [[0, length], [0, width], [width - 1, length]]
+    perimeter_cells = set()
 
-    for r in rows:
-        for i in range(*r):
-            if grid.is_cell_empty((i, r[1])):
-                _add_guideline(grid, (i, r[1]), resources)
+    # Aggiungi le celle del perimetro alla prima colonna
+    perimeter_cells.update((i, 0) for i in range(length))
+    # Aggiungi le celle del perimetro all'ultima colonna
+    perimeter_cells.update((i, width - 1) for i in range(length))
+    # Aggiungi le celle del perimetro alla prima riga
+    perimeter_cells.update((0, j) for j in range(width))
+    # Aggiungi le celle del perimetro all'ultima riga
+    perimeter_cells.update((length - 1, j) for j in range(width))
 
-    for c in cols:
-        for j in range(*c):
-            if grid.is_cell_empty((c[0], j)):
-                _add_guideline(grid, (c[0], j), resources)
+    for cell in perimeter_cells:
+        if can_place(grid, cell) and grid.is_cell_empty(cell):
+            print("GUIDELINE: ", cell)
+            _add_guideline(grid, cell, resources)
 
 
 def _add_guideline(grid, coord, resources):
@@ -434,9 +421,7 @@ def fill_circular_blocked_area(self, start_x: int, start_y: int, radius: int):
                 if i ** 2 + j ** 2 <= radius ** 2:
                     point = Point(midpoint.x + i, midpoint.y + j)
                     if self.can_blocked_place(point):
-                        new_resource = CircledBlockedArea(
-                            point, radius
-                        )
+                        new_resource = CircledBlockedArea(point, radius)
                         self.add_resource(new_resource, point.x, point.y)
                         self.resources.append(point)
                         self.isolated_area_tassels.append(point)
@@ -499,7 +484,8 @@ def find_largest_blocked_area(grid):
     largest_blocked_area = None
     largest_area = 0
     largest_coords = None
-    for cell_content, x, y in grid.coord_iter():
+    for cell_content, coord in grid.coord_iter():
+
         if isinstance(cell_content, SquaredBlockedArea) or isinstance(
                 cell_content, CircledBlockedArea
         ):
@@ -507,11 +493,11 @@ def find_largest_blocked_area(grid):
             if area > largest_area:
                 largest_area = area
                 largest_blocked_area = cell_content
-                largest_coords = (x, y)
+                largest_coords = coord
     if largest_blocked_area:
         return largest_blocked_area, largest_coords
     else:
-        return None
+        return None, None
 
 
 def add_resource(grid, resource, x, y):
@@ -533,7 +519,6 @@ def populate_blocked_areas(
         num_squares,
         num_circles,
         grid,
-        environment_data,
         min_width_blocked,
         max_width_blocked,
         min_height_blocked,
@@ -547,7 +532,6 @@ def populate_blocked_areas(
         num_squares (int): Number of square blocked areas to populate.
         num_circles (int): Number of circular blocked areas to populate.
         grid (mesa.space.Grid): The grid space.
-        environment_data (dict): Data related to the environment.
         min_width_blocked (int): Minimum width of a square blocked area.
         max_width_blocked (int): Maximum width of a square blocked area.
         min_height_blocked (int): Minimum height of a square blocked area.
@@ -559,7 +543,7 @@ def populate_blocked_areas(
         square = SquaredBlockedArea(
             (x, y),
             random.randint(min_width_blocked, max_width_blocked),  # noqa: E231
-            random.randint(min_height_blocked, max_height_blocked)
+            random.randint(min_height_blocked, max_height_blocked),
         )
         add_resource(grid, square, x, y)
         resources.append((x, y))
@@ -567,9 +551,7 @@ def populate_blocked_areas(
     # Add blocked circles
     for _ in range(num_circles):
         (x, y) = generate_valid_agent_position(grid)
-        circle = CircledBlockedArea(
-            (x, y), random.randint(1, 10)
-        )
+        circle = CircledBlockedArea((x, y), random.randint(1, 10))
         add_resource(grid, circle, x, y)
         resources.append((x, y))
 

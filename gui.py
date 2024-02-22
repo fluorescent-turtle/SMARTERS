@@ -11,7 +11,6 @@ from utils import (
     add_base_station,
     generate_pair,
     find_largest_blocked_area,
-    calculate_position,
 )
 
 
@@ -62,19 +61,10 @@ def create_random_grid(environment_data, tassel_dim):
     )
 
     # Populate the grid with blocked areas
-    populate_blocked_areas(
-        resources,
-        num_blocked_squares,
-        num_blocked_circles,
-        grid,
-        environment_data,
-        min_width_blocked,
-        max_width_blocked,
-        min_height_blocked,
-        max_height_blocked,
-    )
+    populate_blocked_areas(resources, num_blocked_squares, num_blocked_circles, grid, min_width_blocked,
+                           max_width_blocked, min_height_blocked, max_height_blocked)
 
-    populate_perimeter_guidelines(width, length, grid, resources)
+    populate_perimeter_guidelines(int(width), int(length), grid, resources)
 
     return grid, resources
 
@@ -97,6 +87,7 @@ def run_model_with_parameters(robot_data, grid, resources, repetitions, cycles):
         for cycle in range(cycles):
             # Start the simulation
             simulation = Simulator(grid, robot_data, resources)
+            simulation.step()
 
 
 def begin_simulation(tassel_dim, repetitions, cycle):
@@ -115,21 +106,24 @@ def begin_simulation(tassel_dim, repetitions, cycle):
         environment_data = json.load(environment_file)
 
     grid, resources = create_random_grid(environment_data, tassel_dim)
+    base_station = generate_pair(environment_data["width"], environment_data["length"])
 
     # Add base station to the perimeter
     add_base_station(
         grid,
-        generate_pair(environment_data["width"], environment_data["length"]),
+        base_station,
         resources,
     )
+
+    # Add guidelines on the grid
 
     run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)
 
     # Add base station to the biggest blocked area randomly
     biggest_area, coords = find_largest_blocked_area(grid)
-
+    """ 
     # Calculate position for the base station
-    base_station_position = calculate_position(
+   base_station_position = calculate_position(
         grid, False, coords, environment_data["width"], environment_data["length"]
     )
 
@@ -143,7 +137,7 @@ def begin_simulation(tassel_dim, repetitions, cycle):
     )
 
     add_base_station(grid, base_station_position1, resources)
-    run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)
+    run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)"""
 
 
 class SimulatorWindow(Tk):

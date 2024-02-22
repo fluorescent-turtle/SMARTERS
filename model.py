@@ -11,7 +11,7 @@ class MovingAgent(Agent):
     An agent that moves on the grid.
     """
 
-    def __init__(self, unique_id, grid, robot_data, resources):
+    def __init__(self, unique_id, grid, robot_data, resources, model, pos):
         """
         Initialize a new MovingAgent.
 
@@ -21,10 +21,10 @@ class MovingAgent(Agent):
             robot_data: Data related to the robot.
             resources (list): List of resource positions.
         """
-        super().__init__(unique_id, robot_data)
-        self.robot_data = robot_data
+        super().__init__(unique_id, model)
         self.grid = grid  # Reference to the grid space
         self.resources = resources
+        self.pos = pos
 
     def get_empty_cells(self):
         """
@@ -41,7 +41,7 @@ class MovingAgent(Agent):
         """
         Move the agent to a neighboring cell if available.
         """
-        # Get the right neighbor of the agent
+        # Get the right neighbour of the agent
         right_neighbor = (self.pos[0] + 1, self.pos[1])
 
         if (
@@ -108,7 +108,19 @@ class MovingAgent(Agent):
         new_position = random.choice(possible_moves)
         print("NEW AGENT POSITION ----- ", new_position)
         # Move the agent to the new position on the grid
-        self.grid.move_agent(self, new_position)
+        if self.grid.is_cell_empty(new_position):
+            self.grid.move_agent(self, new_position)
+
+
+def find_first_empty_cell(model):
+    grid = model.grid
+    width, height = grid.width, grid.height
+    for x in range(width):
+        for y in range(height):
+            cell_content = grid.get_cell_list_contents([(x, y)])
+            if len(cell_content) == 0:
+                return x, y
+    return None
 
 
 class Simulator(mesa.Model):
@@ -136,6 +148,17 @@ class Simulator(mesa.Model):
             }
         )
 
+        # todo: ---sample ---- prendi la prima cella libera
+        cell = find_first_empty_cell(self)
+        print("CELL: ", cell)
+        if cell is not None:
+            self.grid.place_agent(
+                MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1])),
+                (cell[0], cell[1]),
+            )
+        self.schedule.add(
+            MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1]))
+        )
         self.running = True
         self.datacollector.collect(self)
 
@@ -144,6 +167,7 @@ class Simulator(mesa.Model):
         Advance the model by one step.
         """
         self.schedule.step()
+
         self.datacollector.collect(self)
 
     @staticmethod
