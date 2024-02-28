@@ -150,7 +150,7 @@ class Simulator(mesa.Model):
 
         # todo: ---sample ---- prendi la prima cella libera
         cell = find_first_empty_cell(self)
-        print("CELL: ", cell)
+        print("FIRST EMPTY CELL: ", cell)
         if cell is not None:
             self.grid.place_agent(
                 MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1])),

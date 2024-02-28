@@ -138,21 +138,3 @@
                     break  # Fermarsi quando viene trovata una casella libera
                 else:
                     print("No empty cell found around position.")
-
-
-
-
-
-  ---------------------------------------------> guide lines
-  # Draw a line from the base station to a random tassel
-        random_tassel = random.choice(self.isolated_area_tassels)
-        # todo: problem
-        if position[0] >= 0:
-            self.draw_line(position[0], position[1], random_tassel[0], random_tassel[1])
-        else:
-            self.draw_line(
-                self.base_station_position[0],
-                self.base_station_position[1],
-                random_tassel[0],
-                random_tassel[1],
-            )

@@ -192,9 +192,13 @@ def add_base_station(grid, position, resources):
         resources (list): List of resources on the grid.
     """
     if within_bounds(grid, position) and not grid.is_cell_occupied(position):
+        print("BASE STATION: ", position)
         base_station = BaseStation((position[0], position[1]))
         add_resource(grid, base_station, position[0], position[1])
         resources.append(position)
+
+        return position
+    return None
 
 
 def handle_isolated_area(
@@ -209,7 +213,6 @@ def handle_isolated_area(
         radius,
         dimension_tassel,
         resources,
-        counter,
 ):
     """
     Handle the isolated area on the grid.
@@ -226,7 +229,6 @@ def handle_isolated_area(
         radius (int): Radius of the area.
         dimension_tassel (float): Dimension of the tassel.
         resources (list): List of resources on the grid.
-        counter (iterator): Iterator for counting.
 
     Notes:
         This function handles the placement of the isolated area on the grid based on its shape.
@@ -238,16 +240,7 @@ def handle_isolated_area(
                 resources.append((i, j))
                 isolated_area_tassels.append((i, j))
     else:
-        fill_circular_area(
-            grid,
-            radius,
-            x_start,
-            y_start,
-            dimension_tassel,
-            counter,
-            resources,
-            isolated_area_tassels,
-        )
+        fill_circular_area(grid, radius, x_start, y_start, dimension_tassel, resources, isolated_area_tassels)
 
 
 def choose_random_corner(environment_data):
@@ -305,20 +298,10 @@ def initialize_isolated_area(
     random_corner = choose_random_corner(environment_data)
     x_start, y_start = random_corner
 
-    handle_isolated_area(
-        grid=grid,
-        shape=isolated_shape,
-        randint=randint,
-        x_start=x_start,
-        y_start=y_start,
-        isolated_area_width=isolated_area_width,
-        isolated_area_length=isolated_area_length,
-        isolated_area_tassels=isolated_area_tassels,
-        radius=radius,
-        dimension_tassel=dimension_tassel,
-        resources=resources,
-        counter=counter,
-    )
+    handle_isolated_area(grid=grid, shape=isolated_shape, randint=randint, x_start=x_start, y_start=y_start,
+                         isolated_area_width=isolated_area_width, isolated_area_length=isolated_area_length,
+                         isolated_area_tassels=isolated_area_tassels, radius=radius, dimension_tassel=dimension_tassel,
+                         resources=resources)
 
 
 def fill_circular_area(
@@ -327,7 +310,6 @@ def fill_circular_area(
         x_start,
         y_start,
         dimension_tassel,
-        counter,
         resources,
         isolated_area_tassels,
 ):
@@ -340,7 +322,6 @@ def fill_circular_area(
         x_start (int): X-coordinate to start.
         y_start (int): Y-coordinate to start.
         dimension_tassel (float): Dimension of the tassel.
-        counter (iterator): Iterator for counting.
         resources (list): List of resources on the grid.
         isolated_area_tassels (list): List of tassels in the isolated area.
     """
@@ -548,6 +529,7 @@ def populate_blocked_areas(
         add_resource(grid, square, x, y)
         resources.append((x, y))
 
+    # todo: non va bene, devi sistemarlo, ispirati all'area isolata circolare
     # Add blocked circles
     for _ in range(num_circles):
         (x, y) = generate_valid_agent_position(grid)
