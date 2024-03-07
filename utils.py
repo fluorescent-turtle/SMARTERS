@@ -1,5 +1,6 @@
 import math
 import random
+from mesa.space import SingleGrid
 from collections import namedtuple
 from agents import (
     SquaredBlockedArea,
@@ -44,7 +45,7 @@ def generate_valid_agent_position(grid):
     while True:
         x = random.randrange(grid.width)
         y = random.randrange(grid.height)
-        if not grid.is_cell_occupied((x, y)):
+        if grid.is_cell_empty((x, y)) or grid:
             return x, y
 
 
@@ -191,8 +192,9 @@ def add_base_station(grid, position, resources):
         position (tuple): The position to add the base station.
         resources (list): List of resources on the grid.
     """
-    if within_bounds(grid, position) and not grid.is_cell_occupied(position):
-        print("BASE STATION: ", position)
+
+    if within_bounds(grid, position) and grid.is_cell_empty(position):
+
         base_station = BaseStation((position[0], position[1]))
         add_resource(grid, base_station, position[0], position[1])
         resources.append(position)
@@ -240,7 +242,15 @@ def handle_isolated_area(
                 resources.append((i, j))
                 isolated_area_tassels.append((i, j))
     else:
-        fill_circular_area(grid, radius, x_start, y_start, dimension_tassel, resources, isolated_area_tassels)
+        fill_circular_area(
+            grid,
+            int(radius),
+            x_start,
+            y_start,
+            dimension_tassel,
+            resources,
+            isolated_area_tassels,
+        )
 
 
 def choose_random_corner(environment_data):
@@ -298,10 +308,19 @@ def initialize_isolated_area(
     random_corner = choose_random_corner(environment_data)
     x_start, y_start = random_corner
 
-    handle_isolated_area(grid=grid, shape=isolated_shape, randint=randint, x_start=x_start, y_start=y_start,
-                         isolated_area_width=isolated_area_width, isolated_area_length=isolated_area_length,
-                         isolated_area_tassels=isolated_area_tassels, radius=radius, dimension_tassel=dimension_tassel,
-                         resources=resources)
+    handle_isolated_area(
+        grid=grid,
+        shape=isolated_shape,
+        randint=randint,
+        x_start=x_start,
+        y_start=y_start,
+        isolated_area_width=isolated_area_width,
+        isolated_area_length=isolated_area_length,
+        isolated_area_tassels=isolated_area_tassels,
+        radius=radius,
+        dimension_tassel=dimension_tassel,
+        resources=resources,
+    )
 
 
 def fill_circular_area(
@@ -341,7 +360,7 @@ def fill_circular_area(
             for j in range(-radius, radius + 1):
                 if i ** 2 + j ** 2 <= radius ** 2:
                     p = (cx + i, cx + j)
-                    if can_place(grid, p):
+                    if within_bounds(grid, p) and can_place(grid, p):
                         add_resource(
                             grid,
                             CircularIsolation(
@@ -354,37 +373,26 @@ def fill_circular_area(
                         )
                         resources.append((cx + i, cy + j))
                         isolated_area_tassels.append((cx + i, cy + j))
+                        print("ISOLATED TASSELS: ", (cx + i, cx + j))
 
 
-def fill_circular_blocked_area(self, start_x: int, start_y: int, radius: int):
-    """
-    Fill the isolated circular area on the grid.
-
-    Args:
-        self: The simulator instance.
-        start_x (int): The x-coordinate of the center of the circular area.
-        start_y (int): The y-coordinate of the center of the circular area.
-        radius (int): The radius of the circular area.
-    """
-    squared_circle_count = int(
-        (math.pi * radius * radius) / (self.dimension_tassel ** 2)
-    )
+def fill_circular_blocked_area(
+        start_x: int, start_y: int, radius: int, dimension_tassel, grid, resources
+):
+    squared_circle_count = int((math.pi * radius * radius) / (dimension_tassel ** 2))
     angle_delta = math.pi * 2 / squared_circle_count
 
     for idx in range(squared_circle_count):
         angle = angle_delta * idx
-
+        print("ANGLE BLOCKED CIRCLE", angle)
         center = Point(
             round(start_x + radius * math.cos(angle)),
             round(start_y + radius * math.sin(angle)),
         )
+        print("CENTER BLOCKED CIRCLE", center)
         next_center = Point(
-            round(
-                center.x + math.cos(angle + angle_delta) * self.dimension_tassel * 0.5
-            ),
-            round(
-                center.y + math.sin(angle + angle_delta) * self.dimension_tassel * 0.5
-            ),
+            round(center.x + math.cos(angle + angle_delta) * dimension_tassel * 0.5),
+            round(center.y + math.sin(angle + angle_delta) * dimension_tassel * 0.5),
         )
 
         midpoint = Point(
@@ -394,18 +402,18 @@ def fill_circular_blocked_area(self, start_x: int, start_y: int, radius: int):
 
         distance = euclidean_distance((midpoint.x, midpoint.y), (center.x, center.y))
         assert (
-                distance < self.dimension_tassel * 0.5
+                distance < dimension_tassel * 0.5
         ), f"Distance {distance} exceeded allowed limit."
 
         for i in range(-radius, (radius + 1)):
             for j in range(-radius, (radius + 1)):
                 if i ** 2 + j ** 2 <= radius ** 2:
                     point = Point(midpoint.x + i, midpoint.y + j)
-                    if self.can_blocked_place(point):
+                    if can_blocked_place(grid, point):
+                        print("BLOCKED CIRCULAR POINT ", point)
                         new_resource = CircledBlockedArea(point, radius)
-                        self.add_resource(new_resource, point.x, point.y)
-                        self.resources.append(point)
-                        self.isolated_area_tassels.append(point)
+                        add_resource(grid, new_resource, point.x, point.y)
+                        resources.append(point)
 
 
 def can_place(grid, pos):
@@ -491,7 +499,7 @@ def add_resource(grid, resource, x, y):
         x (int): X-coordinate of the position.
         y (int): Y-coordinate of the position.
     """
-    if grid.is_cell_empty((x, y)):
+    if within_bounds(grid, (x, y)) and grid.is_cell_empty((x, y)):
         grid.place_agent(resource, (x, y))
 
 
@@ -504,6 +512,8 @@ def populate_blocked_areas(
         max_width_blocked,
         min_height_blocked,
         max_height_blocked,
+        ray,
+        dimension_tassel,
 ):
     """
     Populate blocked areas on the grid.
@@ -523,19 +533,16 @@ def populate_blocked_areas(
         (x, y) = generate_valid_agent_position(grid)
         square = SquaredBlockedArea(
             (x, y),
-            random.randint(min_width_blocked, max_width_blocked),  # noqa: E231
+            random.randint(min_width_blocked, max_width_blocked),
             random.randint(min_height_blocked, max_height_blocked),
         )
         add_resource(grid, square, x, y)
         resources.append((x, y))
 
-    # todo: non va bene, devi sistemarlo, ispirati all'area isolata circolare
     # Add blocked circles
     for _ in range(num_circles):
         (x, y) = generate_valid_agent_position(grid)
-        circle = CircledBlockedArea((x, y), random.randint(1, 10))
-        add_resource(grid, circle, x, y)
-        resources.append((x, y))
+        fill_circular_blocked_area(x, y, int(ray), dimension_tassel, grid, resources)
 
 
 def euclidean_distance(p1, p2):

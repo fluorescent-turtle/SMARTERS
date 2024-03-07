@@ -1,4 +1,4 @@
-from gui import SimulatorWindow
+from simulator import begin_simulation
 
 if __name__ == "__main__":
-    SimulatorWindow().mainloop()
+    begin_simulation()
