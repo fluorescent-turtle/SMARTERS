@@ -1,10 +1,10 @@
 import itertools
 import json
 import random
-from mesa.space import SingleGrid, MultiGrid
 
+from mesa.space import SingleGrid, MultiGrid
 from agents import GuideLine
-from model import Simulator
+from Model.model import Simulator
 from utils import (
     initialize_isolated_area,
     populate_blocked_areas,
@@ -16,29 +16,17 @@ from utils import (
 )
 
 
-# todo: function that will allow to custom the grid
-def custom_environment(extra_data):
-    pass
-
-
-def create_random_grid(
-        environment_data,
-        tassel_dim,
-        isolated_area_tassels,
-        extra_data
-):
+def create_random_grid(environment_data, tassel_dim, isolated_area_tassels):
     """
-    Create a random grid environment based on the provided parameters.
+    Create a random grid environment based on the given parameters.
 
     Args:
-        environment_data (dict): Data related to the environment.
-        tassel_dim (float): Dimension of the tassel.
-        isolated_area_tassels (list): List to store tassel coordinates for the isolated area.
-        extra_data (dict): Additional data from developer
+        environment_data (dict): Environment information.
+        tassel_dim (float): Tassel dimension.
+        isolated_area_tassels (List[Tuple[int, int]]): Coordinates of tassels in the isolated area.
 
     Returns:
-        mesa.space.Grid: The grid environment.
-        list: List of resources in the grid.
+        tuple: A tuple containing the created grid, list of resources, and the position of the base station.
     """
     # Set environment parameters
     width = environment_data["width"]
@@ -56,7 +44,7 @@ def create_random_grid(
     ray = environment_data["ray"]
 
     # Initialize model components
-    grid = MultiGrid(int(width), int(length), torus=False)  # todo: change to multigrid
+    grid = MultiGrid(int(width), int(length), torus=False)
 
     resources = []
     counter = itertools.count
@@ -72,7 +60,6 @@ def create_random_grid(
         radius,
         tassel_dim,
         resources,
-        counter,
     )
 
     # Populate the grid with blocked areas
@@ -104,62 +91,60 @@ def create_random_grid(
     # Populate the grid with perimeter guidelines
     populate_perimeter_guidelines(int(width), int(length), grid, resources)
 
-    # todo: qui si estrapolano le altre caratteristiche
-    custom_environment(extra_data)
-
     return grid, resources, position
 
 
-def run_model_with_parameters(robot_data, grid, resources, repetitions, cycles):
+def run_model_with_parameters(robot_data, grid, resources, repetitions, cycles, dim_tassel):
     """
     Run the simulation with the specified parameters.
 
     Args:
-        robot_data (dict): Data related to the robot.
-        grid (Grid): The grid on which the simulation will be run.
-        resources (list): List of resources to be used in the simulation.
-        repetitions (int): Number of repetitions.
-        cycles (int): Number of cycles per repetition.
+        robot_data (dict): Robot information.
+        grid (MultiGrid): Grid to perform the simulation on.
+        resources (list): Resources present in the grid.
+        repetitions (int): Number of times the experiment should repeat.
+        cycles (int): Length of each experiment.
+        dim_tassel (float): Dimension of the tassel
 
     Returns:
         None
     """
-    for repetition in range(repetitions):
-        for cycle in range(cycles):
+    for _ in range(repetitions):
+        for _ in range(cycles):
             # Start the simulation
-            simulation = Simulator(grid, robot_data, resources)
+            simulation = Simulator(grid, robot_data, resources, dim_tassel)
             simulation.step()
 
 
 def set_cell(x, y, grid, resources):
     """
-    Set a cell on the grid with a guide line.
+    Place a Guideline agent at a specific location within the grid.
 
     Args:
-        x (int): The x-coordinate of the cell.
-        y (int): The y-coordinate of the cell.
-        grid (mesa.space.Grid): The grid space.
-        resources (list): List of resources.
+        x (int): X coordinate of the cell.
+        y (int): Y coordinate of the cell.
+        grid (SingleGrid or MultiGrid): Mesa Space object where the agent resides.
+        resources (list): Resources available during initialization.
 
     Returns:
         None
     """
-    guide_line = GuideLine((x, y))
-    add_resource(grid, guide_line, x, y)
+    guideline = GuideLine((x, y))
+    add_resource(grid, guideline, x, y)
     resources.append((x, y))
 
 
 def draw_line(x1, y1, x2, y2, grid, resources):
     """
-    Draw a line between two points on the grid.
+    Draw a straight line connecting two points using Bresenham's algorithm.
 
     Args:
-        x1 (int): The x-coordinate of the starting point.
-        y1 (int): The y-coordinate of the starting point.
-        x2 (int): The x-coordinate of the ending point.
-        y2 (int): The y-coordinate of the ending point.
-        grid (mesa.space.Grid): The grid space.
-        resources (list): List of resources.
+        x1 (int): Starting point X coordinate.
+        y1 (int): Starting point Y coordinate.
+        x2 (int): Ending point X coordinate.
+        y2 (int): Ending point Y coordinate.
+        grid (SingleGrid or MultiGrid): Mesa Space object where the agents reside.
+        resources (list): Resources available during initialization.
 
     Returns:
         None
@@ -169,9 +154,9 @@ def draw_line(x1, y1, x2, y2, grid, resources):
     sx = 1 if x1 < x2 else -1
     sy = 1 if y1 < y2 else -1
     err = dx - dy
+
     while (x1, y1) != (x2, y2):
         set_cell(x1, y1, grid, resources)
-        print("SET CELL: ", (x1, y1))
         e2 = 2 * err
         if e2 > -dy:
             err -= dy
@@ -182,36 +167,27 @@ def draw_line(x1, y1, x2, y2, grid, resources):
     set_cell(x1, y1, grid, resources)
 
 
-def begin_simulation():
+def begin_simulation(plugins):
     """
-    Begin the simulation with the specified parameters.
+    Initiate the simulation by setting up required objects and running it.
+
+    Returns:
+        None
+        :param plugins:
     """
-    # Read data from JSON files in another directory
-    with open(
-            "../SetUp/robot_file", "r"
-    ) as robot_file:  # TODO: modify the directory if your file are somewhere else
-        robot_data = json.load(robot_file)
-    with open(
-            "../SetUp/environment_file", "r"
-    ) as environment_file:  # TODO: modify the directory if your file are somewhere else
-        environment_data = json.load(environment_file)
-    with open(
-            "../SetUp/simulator_file", "r"
-    ) as simulator_file:  # TODO: modify the directory if your file are somewhere else
-        simulator_data = json.load(simulator_file)
-    # with open("../SetUp/extra_file", "r") as extra_file:
-    #    extra_data = json.load(extra_file)"""
+    # Load data from external JSON files
+    with open("../SetUp/robot_file.json") as f:
+        robot_data = json.load(f)
+    with open("../SetUp/environment_file.json") as f:
+        environment_data = json.load(f)
+    with open("../SetUp/simulator_file.json") as f:
+        simulator_data = json.load(f)
 
     isolated_area_tassels = []
-    grid, resources, position = create_random_grid(
-        environment_data,
-        simulator_data["dim_tassel"],
-        isolated_area_tassels,
-
-    )
+    grid, resources, position = create_random_grid(environment_data, simulator_data["tassel_dim"],
+                                                   isolated_area_tassels)
 
     if isolated_area_tassels is not []:
-        # Draw a line from the base station to a random tassel in the isolated area
         random_tassel = random.choice(isolated_area_tassels)
         draw_line(
             position[0],
@@ -222,16 +198,16 @@ def begin_simulation():
             resources,
         )
 
-        # Run model
         run_model_with_parameters(
             robot_data,
             grid,
             resources,
             simulator_data["repetitions"],
-            simulator_data["cycle"],
+            simulator_data["cycles"],
+            simulator_data["dim_tassel"]
         )
 
-        # Add base station to the biggest blocked area randomly
+        # Add base station to the largest blocked area randomly
         biggest_area, coords = find_largest_blocked_area(grid)
     else:
         print("Base station position is None")

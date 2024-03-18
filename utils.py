@@ -1,8 +1,7 @@
 import math
 import random
-from mesa.space import SingleGrid
 from collections import namedtuple
-from agents import (
+from Model.agents import (
     SquaredBlockedArea,
     CircledBlockedArea,
     IsolatedArea,
@@ -287,7 +286,6 @@ def initialize_isolated_area(
         radius,
         dimension_tassel,
         resources,
-        counter,
 ):
     """
     Initialize the isolated area on the grid.
@@ -489,6 +487,15 @@ def find_largest_blocked_area(grid):
         return None, None
 
 
+def get_instance(grid, x, y):
+    cell_contents = grid.get_cell_list_contents([(x, y)])
+
+    for cell in cell_contents:
+        if isinstance(cell, CircledBlockedArea) or isinstance(cell, SquaredBlockedArea):
+            return True
+    return False
+
+
 def add_resource(grid, resource, x, y):
     """
     Add a resource to the grid.
@@ -499,7 +506,9 @@ def add_resource(grid, resource, x, y):
         x (int): X-coordinate of the position.
         y (int): Y-coordinate of the position.
     """
-    if within_bounds(grid, (x, y)) and grid.is_cell_empty((x, y)):
+    if within_bounds(grid, (x, y)) and (
+            grid.is_cell_empty((x, y)) or get_instance(grid, x, y) is False
+    ):
         grid.place_agent(resource, (x, y))
 
 

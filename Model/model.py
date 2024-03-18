@@ -3,7 +3,8 @@ import random
 import mesa
 from mesa import Agent
 
-from agents import GuideLine
+from agents import GuideLine, GrassTassel
+from utils import add_resource, get_instance
 
 
 class MovingAgent(Agent):
@@ -26,16 +27,11 @@ class MovingAgent(Agent):
         self.resources = resources
         self.pos = pos
 
-    def get_empty_cells(self):
-        """
-        Get a list of empty cells on the grid.
-
-        Returns:
-            list: List of empty cell positions.
-        """
+    """def get_empty_cells(self):
+        
         return [
             cell for cell in self.grid.coord_iter() if self.grid.is_cell_empty(cell)
-        ]
+        ]"""
 
     def step(self):
         """
@@ -51,15 +47,9 @@ class MovingAgent(Agent):
             # Check if the right neighbor contains a GuideLine
             if self.grid.is_cell_empty(right_neighbor):
                 contents = self.grid.get_cell_list_contents([right_neighbor])
-                if contents and isinstance(contents[0], GuideLine):
-                    # Move forward until a non-GuideLine cell is found to the right
-                    while self.grid.is_cell_empty(right_neighbor) and isinstance(
-                            contents[0], GuideLine
-                    ):
-                        self.move_agent_to_right()
-                else:
-                    # Move to a random neighbor if the right neighbor is not empty
-                    self.move_to_random_neighbor()
+                # Move forward until a non-GuideLine cell is found to the right
+                while contents and isinstance(contents[0], GuideLine):
+                    self.move_agent_to_right()
             else:
                 # Move to a random neighbor if the right neighbor is not empty
                 self.move_to_random_neighbor()
@@ -130,7 +120,7 @@ class Simulator(mesa.Model):
     Parameters:
     """
 
-    def __init__(self, grid, robot_data, resources):
+    def __init__(self, grid, robot_data, resources, dim_tassel):
         """
         Initialize the Simulator model.
 
@@ -156,9 +146,15 @@ class Simulator(mesa.Model):
                 MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1])),
                 (cell[0], cell[1]),
             )
-        self.schedule.add(
-            MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1]))
+            self.schedule.add(
+                MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1]))
+            )
+
+        self.add_grass_tassels(
+            self,
+            self.grid,
         )
+
         self.running = True
         self.datacollector.collect(self)
 
@@ -180,3 +176,10 @@ class Simulator(mesa.Model):
             # if tassel.condition == tassel_condition:
             count += 1
         return count
+
+    def add_grass_tassels(self, grid, dim_tassel):
+        for x in range(self.grid.width):
+            for y in range(self.grid.height):
+                if not get_instance(self.grid, x, y):
+                    grass_tassel = GrassTassel((x, y), self, dim_tassel, "High")
+                    add_resource(grid, grass_tassel, x, y)
