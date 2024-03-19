@@ -5,12 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4aaf4daf-6ffc-4380-a77a-b78c06119c9e" name="Changes" comment="Initial commit">
-      <change afterPath="$PROJECT_DIR$/Controller/appunti.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/LawnmowersSimulator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/starter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Model/agents.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/agents.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/environment.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/environment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stuff.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/stuff.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Utils/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -199,7 +200,7 @@
       <workItem from="1710151742316" duration="757000" />
       <workItem from="1710175703477" duration="3320000" />
       <workItem from="1710410003606" duration="601000" />
-      <workItem from="1710489400801" duration="9847000" />
+      <workItem from="1710489400801" duration="23229000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -313,7 +314,15 @@
       <option name="project" value="LOCAL" />
       <updated>1710784572340</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Initial commit">
+      <option name="closed" value="true" />
+      <created>1710836864660</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1710836864660</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

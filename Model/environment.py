@@ -1,5 +1,6 @@
 import itertools
 import json
+import os
 import random
 
 from mesa.space import SingleGrid, MultiGrid
@@ -16,18 +17,8 @@ from Utils.utils import (
 )
 
 
-def create_random_grid(environment_data, tassel_dim, isolated_area_tassels):
-    """
-    Create a random grid environment based on the given parameters.
+def create_random_grid(environment_data, tassel_dim, isolated_area_tassels, plugins):
 
-    Args:
-        environment_data (dict): Environment information.
-        tassel_dim (float): Tassel dimension.
-        isolated_area_tassels (List[Tuple[int, int]]): Coordinates of tassels in the isolated area.
-
-    Returns:
-        tuple: A tuple containing the created grid, list of resources, and the position of the base station.
-    """
     # Set environment parameters
     width = environment_data["width"]
     length = environment_data["length"]
@@ -45,6 +36,10 @@ def create_random_grid(environment_data, tassel_dim, isolated_area_tassels):
 
     # Initialize model components
     grid = MultiGrid(int(width), int(length), torus=False)
+
+    # Apply all provided plugins to the grid
+    for plugin in plugins:
+        grid = apply_plugin(plugin, grid)
 
     resources = []
     counter = itertools.count
@@ -94,7 +89,9 @@ def create_random_grid(environment_data, tassel_dim, isolated_area_tassels):
     return grid, resources, position
 
 
-def run_model_with_parameters(robot_data, grid, resources, repetitions, cycles, dim_tassel):
+def run_model_with_parameters(
+        robot_data, grid, resources, repetitions, cycles, dim_tassel
+):
     """
     Run the simulation with the specified parameters.
 
@@ -176,16 +173,27 @@ def begin_simulation(plugins):
         :param plugins:
     """
     # Load data from external JSON files
-    with open("../SetUp/robot_file.json") as f:
-        robot_data = json.load(f)
-    with open("../SetUp/environment_file.json") as f:
-        environment_data = json.load(f)
-    with open("../SetUp/simulator_file.json") as f:
-        simulator_data = json.load(f)
-
+    robot_data = None
+    environment_data = None
+    simulator_data = None
     isolated_area_tassels = []
-    grid, resources, position = create_random_grid(environment_data, simulator_data["tassel_dim"],
-                                                   isolated_area_tassels)
+
+    if os.path.exists("../SetUp/robot_file.json"):
+        with open("../SetUp/robot_file.json") as f:
+            robot_data = json.load(f)
+    if os.path.exists("../SetUp/environment_file.json"):
+        with open("../SetUp/environment_file.json") as f:
+            environment_data = json.load(f)
+    if os.path.exists("../SetUp/simulator_file.json"):
+        with open("../SetUp/simulator_file.json") as f:
+            simulator_data = json.load(f)
+    # todo: in setup prende taglio - rimbalzo come plugin
+
+    # Proceed with initialization regardless of existence of JSON files
+    tassel_dim = simulator_data.get("tassel_dim", {}) if simulator_data else {}
+    grid, resources, position = create_random_grid(
+        environment_data, tassel_dim, isolated_area_tassels, plugins
+    )
 
     if isolated_area_tassels is not []:
         random_tassel = random.choice(isolated_area_tassels)
@@ -204,7 +212,7 @@ def begin_simulation(plugins):
             resources,
             simulator_data["repetitions"],
             simulator_data["cycles"],
-            simulator_data["dim_tassel"]
+            simulator_data["dim_tassel"],
         )
 
         # Add base station to the largest blocked area randomly

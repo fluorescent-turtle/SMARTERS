@@ -16,7 +16,6 @@ class Robot(mesa.Agent):
             model: Standard model reference for agent.
         """
         super().__init__(pos, model)
-        self.pos = pos
         self.condition = "High"
 
     def step(self):

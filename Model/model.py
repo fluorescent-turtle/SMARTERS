@@ -183,3 +183,11 @@ class Simulator(mesa.Model):
                 if not get_instance(self.grid, x, y):
                     grass_tassel = GrassTassel((x, y), self, dim_tassel, "High")
                     add_resource(grid, grass_tassel, x, y)
+
+    def find_neighbors(self, pos, radius):
+        # Implementazione del metodo per trovare i vicini
+        pass
+
+    def notify(self, event_type, event_data):
+        # Implementazione del metodo per notificare gli eventi
+        pass
