@@ -5,7 +5,7 @@ import random
 from mesa.space import SingleGrid, MultiGrid
 from agents import GuideLine
 from Model.model import Simulator
-from utils import (
+from Utils.utils import (
     initialize_isolated_area,
     populate_blocked_areas,
     populate_perimeter_guidelines,

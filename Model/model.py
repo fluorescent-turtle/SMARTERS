@@ -4,7 +4,7 @@ import mesa
 from mesa import Agent
 
 from agents import GuideLine, GrassTassel
-from utils import add_resource, get_instance
+from Utils.utils import add_resource, get_instance
 
 
 class MovingAgent(Agent):
