@@ -1,185 +1,156 @@
 import math
 import random
-from collections import namedtuple
-from Model.agents import (
-    SquaredBlockedArea,
-    CircledBlockedArea,
-    IsolatedArea,
-    CircularIsolation,
-    GuideLine,
-    BaseStation,
-)
 
-Point = namedtuple("Point", "x y")
+from Model.agents import BaseStation, GuideLine
 
 
-def generate_pair(width, length):
+class StationGuidelinesStrategy:
     """
-    Generate a pair of integers that can only be (0, random(range(width)-1)) or (random(range(length)-1), 0).
+    Abstract class representing different strategies to place base stations
+    based on guidelines.
+    """
 
-    Parameters:
-        width (int): The width of the range.
-        length (int): The length of the range.
+    def locate_base_station(
+            self, grid, center_tassel, biggest_blocked_area, resources, width, length
+    ):
+        pass
+
+
+class PerimeterPairStrategy(StationGuidelinesStrategy):
+    """
+    Class to represent the strategy of placing a base station at a perimeter pair
+    """
+
+    def locate_base_station(
+            self, grid, center_tassel, biggest_blocked_area, resources, width, length
+    ):
+        base_station = None
+
+        while not base_station:
+            base_station = generate_perimeter_pair(width, length)
+
+        return add_base_station(grid, base_station, resources)
+
+
+# todo: biggest blocked area e' l'insieme dei tasselli perimetrali attorno all'area bloccata piu' grande
+def generate_biggest_pair(biggest_blocked_area):
+    random_tassel = random.choice(biggest_blocked_area)
+    return random_tassel
+
+
+def generate_perimeter_pair(width, length):
+    """
+    Generate a random pair of coordinates within the grid bounds.
+
+    Args:
+        width (int): Width of the grid.
+        length (int): Length of the grid.
 
     Returns:
-        tuple: A tuple representing the pair of integers.
+        tuple: Randomly generated a pair of coordinates.
     """
-    choice = random.choice([0, 1])  # Randomly choose between 0 and 1
+    choice = random.choice([0, 1])
     if choice == 0:
         return 0, random.randint(0, width - 1)
     else:
         return random.randint(0, length - 1), 0
 
 
-def generate_valid_agent_position(grid):
+def euclidean_distance(p1, p2):
     """
-    Generate a valid agent position on the grid.
+    Compute the Euclidean distance between two points.
 
     Args:
-        grid (mesa.space.Grid): The grid space.
+        p1 (Tuple[float]): First point represented as a tuple of float values (x, y).
+        p2 (Tuple[float]): Second point represented as a tuple of float values (x, y).
 
     Returns:
-        tuple: A tuple containing the x and y coordinates of the valid position.
+        float: The Euclidean distance between the two points.
     """
-    while True:
-        x = random.randrange(grid.width)
-        y = random.randrange(grid.height)
-        if grid.is_cell_empty((x, y)) or grid:
-            return x, y
+    return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
 
-def find_grid_center(width, height):
+def generate_biggest_center_pair(center_tassel, biggest_blocked_area):  # todo: fix
+    if len(biggest_blocked_area) > 0:
+        nearest_tuple = biggest_blocked_area[0]
+        nearest_distance = euclidean_distance(nearest_tuple, center_tassel)
+
+        for tuple_elem in biggest_blocked_area:
+            curr_distance = euclidean_distance(tuple_elem, center_tassel)
+            if curr_distance < nearest_distance:
+                nearest_distance = curr_distance
+                nearest_tuple = tuple_elem
+
+        return nearest_tuple
+    else:
+        return None
+
+
+class BiggestRandomPairStrategy(StationGuidelinesStrategy):
     """
-    Find the center of a Mesa grid.
-
-    Args:
-        width (int): Width of the environment
-        height (int): Height of the environment
-
-    Returns:
-        tuple: A tuple containing the x and y coordinates of the center of the grid.
+    Class to represent the strategy of placing a base station at the biggest random pair
     """
-    center_row = height // 2
-    center_col = width // 2
-    if height % 2 == 0 and width % 2 == 0:
-        center_row -= 1
-        center_col -= 1
-    return center_row, center_col
+
+    def locate_base_station(
+            self, grid, central_tassel, biggest_blocked_area, resources, width, length
+    ):
+        base_station = None
+
+        while not base_station:
+            base_station = generate_biggest_pair(biggest_blocked_area)
+
+        return add_base_station(grid, base_station, resources)
 
 
-def tuple_with_least_difference(tuples, target_tuple):
+class BiggestCenterPairStrategy(StationGuidelinesStrategy):
     """
-    Find the tuple in a list of tuples with the least difference from a target tuple.
-
-    Args:
-        tuples (list of tuple): List of tuples.
-        target_tuple (tuple): The target tuple.
-
-    Returns:
-        tuple: The tuple from the list with the least difference from the target tuple.
+    Class to represent the strategy of placing a base station at the biggest center pair
     """
-    min_difference = float("inf")
-    closest_tuple = None
-    for t in tuples:
-        difference = abs(t[0] - target_tuple[0]) + abs(t[1] - target_tuple[1])
-        if difference < min_difference:
-            min_difference = difference
-            closest_tuple = t
-    return closest_tuple
+
+    def locate_base_station(
+            self, grid, center_tassel, biggest_blocked_area, resources, width, length
+    ):
+        base_station = None
+
+        while not base_station:
+            base_station = generate_biggest_center_pair(
+                center_tassel, biggest_blocked_area
+            )
+
+        return add_base_station(grid, base_station, resources)
 
 
-def find_empty_neighbor(grid, coords):
-    """
-    Find an empty neighboring cell to the given coordinates.
+def put_station_guidelines(
+        strategy, grid, width, length, resources, random_corner_perimeter, central_tassel, biggest_area_blocked
+):
+    base_station_pos = strategy.locate_base_station(
+        strategy, grid, central_tassel, biggest_area_blocked, resources, width, length
+    )
+    populate_perimeter_guidelines(width, length, grid, resources)
+    draw_line(
+        base_station_pos[0],
+        base_station_pos[1],
+        random_corner_perimeter[0],
+        random_corner_perimeter[1],
+        grid,
+        resources,
+    )
 
-    Args:
-        grid (mesa.space.Grid): The grid space.
-        coords (tuple): The coordinates to find an empty neighbor for.
+    # Find the farthest point from base station
+    farthest_point = find_farthest_point(
+        width, length, base_station_pos[0], base_station_pos[1]
+    )
 
-    Returns:
-        tuple: The coordinates of the empty neighbor, or the original coordinates if no empty neighbor is found.
-    """
-    neighbors = grid.get_neighborhood(coords, moore=True, include_center=False)
-    for neighbor in neighbors:
-        if grid.is_cell_empty(neighbor):
-            return neighbor
-    return coords
-
-
-# todo: funzione da correggereb
-def calculate_base_station_position(grid, center, biggest_area_coords, width, height):
-
-    if center:
-        center_coords = find_grid_center(width, height)
-        least_diff_tuple = tuple_with_least_difference(
-            biggest_area_coords, center_coords
+    # If farthest point is found, draw line from base station to it
+    if farthest_point is not None:
+        draw_line(
+            base_station_pos[0],
+            base_station_pos[1],
+            farthest_point[0],
+            farthest_point[1],
+            grid,
+            resources,
         )
-        least_diff_tuple = find_empty_neighbor(grid, least_diff_tuple)
-        return least_diff_tuple
-    else:
-        # todo: questo va corretto
-        random_coords = random.choice(biggest_area_coords)
-        random_coords = find_empty_neighbor(grid, random_coords)
-        return random_coords
-
-
-def get_blocked_area_size(blocked_area):
-    """
-    Calculate the size (area) of a blocked area.
-
-    Args:
-        blocked_area (Agent): The blocked area agent.
-
-    Returns:
-        int: The size (area) of the blocked area.
-    """
-    if isinstance(blocked_area, SquaredBlockedArea):
-        return blocked_area.width * blocked_area.length
-    elif isinstance(blocked_area, CircledBlockedArea):
-        return math.pi * blocked_area.radius ** 2
-    else:
-        return 0  # Return 0 for unsupported blocked area types
-
-
-def populate_perimeter_guidelines(width, length, grid, resources):
-    """
-    Populate perimeter guidelines on the grid.
-
-    Args:
-        width (int): Width of the grid.
-        length (int): Length of the grid.
-        grid (mesa.space.Grid): The grid space.
-        resources (list): List of resources on the grid.
-    """
-    perimeter_cells = set()
-
-    # Aggiungi le celle del perimetro alla prima colonna
-    perimeter_cells.update((i, 0) for i in range(length))
-    # Aggiungi le celle del perimetro all'ultima colonna
-    perimeter_cells.update((i, width - 1) for i in range(length))
-    # Aggiungi le celle del perimetro alla prima riga
-    perimeter_cells.update((0, j) for j in range(width))
-    # Aggiungi le celle del perimetro all'ultima riga
-    perimeter_cells.update((length - 1, j) for j in range(width))
-
-    for cell in perimeter_cells:
-        if can_place(grid, cell) and grid.is_cell_empty(cell):
-            print("GUIDELINE: ", cell)
-            _add_guideline(grid, cell, resources)
-
-
-def _add_guideline(grid, coord, resources):
-    """
-    Add a guideline to the grid.
-
-    Args:
-        grid (mesa.space.Grid): The grid space.
-        coord (tuple): The coordinates of the guideline.
-        resources (list): List of resources on the grid.
-    """
-    guide_line = GuideLine(coord)
-    add_resource(grid, guide_line, *coord)
-    resources.append(coord)
 
 
 def add_base_station(grid, position, resources):
@@ -187,382 +158,158 @@ def add_base_station(grid, position, resources):
     Add a base station to the grid.
 
     Args:
-        grid (mesa.space.Grid): The grid space.
-        position (tuple): The position to add the base station.
+        grid (MultiGrid): MultiGrid object.
+        position (tuple): Position to add the base station.
         resources (list): List of resources on the grid.
+
+    Returns:
+        tuple or None: Position of the base station if added, None otherwise.
     """
-
-    if within_bounds(grid, position) and grid.is_cell_empty(position):
-
+    if within_bounds(grid, position):
         base_station = BaseStation((position[0], position[1]))
         add_resource(grid, base_station, position[0], position[1])
         resources.append(position)
-
         return position
     return None
 
 
-def handle_isolated_area(
-        grid,
-        shape,
-        randint,
-        x_start,
-        y_start,
-        isolated_area_width,
-        isolated_area_length,
-        isolated_area_tassels,
-        radius,
-        dimension_tassel,
-        resources,
-):
+def draw_line(x1, y1, x2, y2, grid, resources):
     """
-    Handle the isolated area on the grid.
+    Draw a straight line connecting two points using Bresenham's algorithm, avoiding existing Guideline objects.
 
     Args:
-        grid (mesa.space.Grid): The grid space.
-        shape (str): The shape of the isolated area.
-        randint (int): Random integer value.
-        x_start (int): X-coordinate to start.
-        y_start (int): Y-coordinate to start.
-        isolated_area_width (int): Width of the isolated area.
-        isolated_area_length (int): Length of the isolated area.
-        isolated_area_tassels (list): List of tassels in the isolated area.
-        radius (int): Radius of the area.
-        dimension_tassel (float): Dimension of the tassel.
-        resources (list): List of resources on the grid.
-
-    Notes:
-        This function handles the placement of the isolated area on the grid based on its shape.
-    """
-    if shape == "Square":
-        for i in range(x_start, int(x_start + isolated_area_width)):
-            for j in range(y_start, int(y_start + isolated_area_length)):
-                add_resource(grid, IsolatedArea(randint), i, j)
-                resources.append((i, j))
-                isolated_area_tassels.append((i, j))
-    else:
-        fill_circular_area(
-            grid,
-            int(radius),
-            x_start,
-            y_start,
-            dimension_tassel,
-            resources,
-            isolated_area_tassels,
-        )
-
-
-def choose_random_corner(environment_data):
-    """
-    Choose a random corner coordinate from the given environment data.
-
-    Args:
-        environment_data (dict): Data related to the environment, including width and length.
+        x1 (int): Starting point X coordinate.
+        y1 (int): Starting point Y coordinate.
+        x2 (int): Ending point X coordinate.
+        y2 (int): Ending point Y coordinate.
+        grid (MultiGrid): Mesa MultiGrid object where the agents and Guideline objects reside.
+        resources (list): Resources available during initialization.
 
     Returns:
-        tuple: A tuple containing the coordinates of the randomly chosen corner.
-
-    Notes:
-        This function randomly selects one of the four corners of the grid based on the width and length
-        specified in the environment data. It returns the coordinates of the chosen corner.
+        None
     """
-    corners = [
-        (0, 0),
-        (0, int(environment_data["length"]) - 1),
-        (int(environment_data["width"]) - 1, 0),
-        (int(environment_data["width"]) - 1, int(environment_data["length"]) - 1),
-    ]
-    random_corner = random.choice(corners)
-    return random_corner
+
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    sx = 1 if x1 < x2 else -1
+    sy = 1 if y1 < y2 else -1
+    err = dx - dy
+
+    # Initialize current position and direction vectors
+    x, y = x1, y1
+    dx_, dy_ = sx, sy
+
+    cells_to_add = []
+    while (x, y) != (x2, y2):
+
+        # Check if the current cell already contains a GuideLine
+        if grid[x][y] is not None and isinstance(grid[x][y], GuideLine):
+            # Change direction randomly to avoid the GuideLine
+            possible_dirs = [(-dx_, -dy_), (-dx_, dy_), (dx_, -dy_), (dx_, dy_)]
+            dir_idx = random.randint(0, 3)  # Choose a random new direction
+            dx_, dy_ = possible_dirs[dir_idx]
+
+        cells_to_add.append((x, y))
+        resources.append((x, y))
+        e2 = 2 * err
+        if e2 > -dy:
+            err -= dy
+            x += dx_
+        if e2 < dx:
+            err += dx
+            y += dy_
+
+    cells_to_add.append((x2, y2))
+    resources.append((x2, y2))
 
 
-def initialize_isolated_area(
-        grid,
-        isolated_shape,
-        isolated_area_width,
-        isolated_area_length,
-        environment_data,
-        isolated_area_tassels,
-        radius,
-        dimension_tassel,
-        resources,
-):
+def set_guideline_cell(x, y, grid, resources):
     """
-    Initialize the isolated area on the grid.
+    Place a Guideline agent at a specific location within the grid.
 
     Args:
-        grid (mesa.space.Grid): The grid space.
-        isolated_shape (str): The shape of the isolated area.
-        isolated_area_width (int): Width of the isolated area.
-        isolated_area_length (int): Length of the isolated area.
-        environment_data (dict): Data related to the environment.
-        isolated_area_tassels (list): List of tassels in the isolated area.
-        radius (int): Radius of the area.
-        dimension_tassel (float): Dimension of the tassel.
-        resources (list): List of resources on the grid.
-        counter (iterator): Iterator for counting.
-    """
-    randint = random.randint(0, 256)
-    random_corner = choose_random_corner(environment_data)
-    x_start, y_start = random_corner
-
-    handle_isolated_area(
-        grid=grid,
-        shape=isolated_shape,
-        randint=randint,
-        x_start=x_start,
-        y_start=y_start,
-        isolated_area_width=isolated_area_width,
-        isolated_area_length=isolated_area_length,
-        isolated_area_tassels=isolated_area_tassels,
-        radius=radius,
-        dimension_tassel=dimension_tassel,
-        resources=resources,
-    )
-
-
-def fill_circular_area(
-        grid,
-        radius,
-        x_start,
-        y_start,
-        dimension_tassel,
-        resources,
-        isolated_area_tassels,
-):
-    """
-    Fill the circular area on the grid.
-
-    Args:
-        grid (mesa.space.Grid): The grid space.
-        radius (int): Radius of the circular area.
-        x_start (int): X-coordinate to start.
-        y_start (int): Y-coordinate to start.
-        dimension_tassel (float): Dimension of the tassel.
-        resources (list): List of resources on the grid.
-        isolated_area_tassels (list): List of tassels in the isolated area.
-    """
-    sqr_count = int((math.pi * radius * radius) / (dimension_tassel ** 2))
-    angle_delta = math.pi * 2 / sqr_count
-    for idx in range(sqr_count):
-        ang = angle_delta * idx
-        sx = round(x_start + radius * math.cos(ang))
-        sy = round(y_start + radius * math.sin(ang))
-        ox = round(sx + math.cos(ang + angle_delta) * dimension_tassel * 0.5)
-        oy = round(sy + math.sin(ang + angle_delta) * dimension_tassel * 0.5)
-        cx = round((ox + sx) / 2)
-        cy = round((oy + sy) / 2)
-        dist = euclidean_distance((cx, cy), (sx, sy))
-        assert dist < dimension_tassel * 0.5, f"Distance {dist} exceeded allowed limit."
-        for i in range(-radius, radius + 1):
-            for j in range(-radius, radius + 1):
-                if i ** 2 + j ** 2 <= radius ** 2:
-                    p = (cx + i, cx + j)
-                    if within_bounds(grid, p) and can_place(grid, p):
-                        add_resource(
-                            grid,
-                            CircularIsolation(
-                                p,
-                                radius,
-                                (2 * math.pi * radius),
-                            ),
-                            cx + i,
-                            cx + j,
-                        )
-                        resources.append((cx + i, cy + j))
-                        isolated_area_tassels.append((cx + i, cy + j))
-                        print("ISOLATED TASSELS: ", (cx + i, cx + j))
-
-
-def fill_circular_blocked_area(
-        start_x: int, start_y: int, radius: int, dimension_tassel, grid, resources
-):
-    squared_circle_count = int((math.pi * radius * radius) / (dimension_tassel ** 2))
-    angle_delta = math.pi * 2 / squared_circle_count
-
-    for idx in range(squared_circle_count):
-        angle = angle_delta * idx
-        print("ANGLE BLOCKED CIRCLE", angle)
-        center = Point(
-            round(start_x + radius * math.cos(angle)),
-            round(start_y + radius * math.sin(angle)),
-        )
-        print("CENTER BLOCKED CIRCLE", center)
-        next_center = Point(
-            round(center.x + math.cos(angle + angle_delta) * dimension_tassel * 0.5),
-            round(center.y + math.sin(angle + angle_delta) * dimension_tassel * 0.5),
-        )
-
-        midpoint = Point(
-            round((next_center.x + center.x) // 2),
-            round((next_center.y + center.y) // 2),
-        )
-
-        distance = euclidean_distance((midpoint.x, midpoint.y), (center.x, center.y))
-        assert (
-                distance < dimension_tassel * 0.5
-        ), f"Distance {distance} exceeded allowed limit."
-
-        for i in range(-radius, (radius + 1)):
-            for j in range(-radius, (radius + 1)):
-                if i ** 2 + j ** 2 <= radius ** 2:
-                    point = Point(midpoint.x + i, midpoint.y + j)
-                    if can_blocked_place(grid, point):
-                        print("BLOCKED CIRCULAR POINT ", point)
-                        new_resource = CircledBlockedArea(point, radius)
-                        add_resource(grid, new_resource, point.x, point.y)
-                        resources.append(point)
-
-
-def can_place(grid, pos):
-    """
-    Check if a resource can be placed at a given position on the grid.
-
-    Args:
-        grid (mesa.space.Grid): The grid space.
-        pos (tuple): Position to check.
+        x (int): X coordinate of the cell.
+        y (int): Y coordinate of the cell.
+        grid (SingleGrid or MultiGrid): Mesa Space object where the agent resides.
+        resources (list): Resources available during initialization.
 
     Returns:
-        bool: True if a resource can be placed, False otherwise.
+        None
     """
-    return grid.is_cell_empty((pos[0], pos[1])) and within_bounds(grid, pos)
+    print("GUIDELINE: ", (x, y))
+    guideline = GuideLine((x, y))
+    add_resource(grid, guideline, x, y)
+    resources.append((x, y))
 
 
-def can_blocked_place(grid, pos):
-    """
-    Check if a resource can be placed at a given position on the grid.
-
-    Args:
-        grid (mesa.space.Grid): The grid space.
-        pos (tuple): Position to check.
-
-    Returns:
-        bool: True if a resource can be placed, False otherwise.
-    """
-    return within_bounds(grid, pos) and grid.is_cell_empty((pos[0], pos[1]))
+def add_resource(grid, resource, x, y):
+    if within_bounds(grid, (x, y)) and grid.is_cell_empty((x, y)):
+        grid.place_agent(resource, (x, y))
 
 
 def within_bounds(grid, pos):
     """
-    Check if a position is within the bounds of the grid.
+    Check if a position is within the grid bounds.
 
     Args:
-        grid (mesa.space.Grid): The grid space.
+        grid (SingleGrid or MultiGrid): Grid object.
         pos (tuple): Position to check.
 
     Returns:
-        bool: True if the position is within bounds, False otherwise.
+        bool: True if position is within bounds, False otherwise.
     """
     x, y = pos
     return 0 <= x < grid.width and 0 <= y < grid.height
 
 
-def find_largest_blocked_area(grid):
+def find_farthest_point(width, height, fx, fy):
     """
-    Find the largest blocked area among all blocked areas on the grid.
+    Find the farthest point from a fixed point on a rectangular grid.
 
     Args:
-        grid (mesa.space.Grid): The grid space.
+        width (int): Width of the grid.
+        height (int): Height of the grid.
+        fx (int): X coordinate of the fixed point.
+        fy (int): Y coordinate of the fixed point.
 
     Returns:
-        tuple or None: A tuple containing the largest blocked area agent and its coordinates,
-                       or None if no blocked areas are present.
+        tuple: Coordinates of the farthest point.
     """
-    largest_blocked_area = None
-    largest_area = 0
-    largest_coords = None
-    for cell_content, coord in grid.coord_iter():
+    max_dist = 0
+    result = (-1, -1)
 
-        if isinstance(cell_content, SquaredBlockedArea) or isinstance(
-                cell_content, CircledBlockedArea
-        ):
-            area = get_blocked_area_size(cell_content)
-            if area > largest_area:
-                largest_area = area
-                largest_blocked_area = cell_content
-                largest_coords = coord
-    if largest_blocked_area:
-        return largest_blocked_area, largest_coords
-    else:
-        return None, None
+    for x in range(width):
+        for y in range(height):
+            if x != fx or y != fy:
+                dist = math.sqrt((x - fx) ** 2 + (y - fy) ** 2)
+                if dist > max_dist:
+                    max_dist = dist
+                    result = (x, y)
+    return result
 
 
-def get_instance(grid, x, y):
-    cell_contents = grid.get_cell_list_contents([(x, y)])
-
-    for cell in cell_contents:
-        if isinstance(cell, CircledBlockedArea) or isinstance(cell, SquaredBlockedArea):
-            return True
-    return False
-
-
-def add_resource(grid, resource, x, y):
+def populate_perimeter_guidelines(width, length, grid, resources):
     """
-    Add a resource to the grid.
+    Populate perimeter guidelines around blocked areas.
 
     Args:
-        grid (mesa.space.Grid): The grid space.
-        resource (Agent): The resource to add.
-        x (int): X-coordinate of the position.
-        y (int): Y-coordinate of the position.
-    """
-    if within_bounds(grid, (x, y)) and (
-            grid.is_cell_empty((x, y)) or get_instance(grid, x, y) is False
-    ):
-        grid.place_agent(resource, (x, y))
-
-
-def populate_blocked_areas(
-        resources,
-        num_squares,
-        num_circles,
-        grid,
-        min_width_blocked,
-        max_width_blocked,
-        min_height_blocked,
-        max_height_blocked,
-        ray,
-        dimension_tassel,
-):
-    """
-    Populate blocked areas on the grid.
-
-    Args:
+        width (int): Width of the grid.
+        length (int): Length of the grid.
+        grid (MultiGrid): MultiGrid object.
         resources (list): List of resources on the grid.
-        num_squares (int): Number of square blocked areas to populate.
-        num_circles (int): Number of circular blocked areas to populate.
-        grid (mesa.space.Grid): The grid space.
-        min_width_blocked (int): Minimum width of a square blocked area.
-        max_width_blocked (int): Maximum width of a square blocked area.
-        min_height_blocked (int): Minimum height of a square blocked area.
-        max_height_blocked (int): Maximum height of a square blocked area.
-    """
-    # Add blocked squares
-    for _ in range(num_squares):
-        (x, y) = generate_valid_agent_position(grid)
-        square = SquaredBlockedArea(
-            (x, y),
-            random.randint(min_width_blocked, max_width_blocked),
-            random.randint(min_height_blocked, max_height_blocked),
-        )
-        add_resource(grid, square, x, y)
-        resources.append((x, y))
-
-    # Add blocked circles
-    for _ in range(num_circles):
-        (x, y) = generate_valid_agent_position(grid)
-        fill_circular_blocked_area(x, y, int(ray), dimension_tassel, grid, resources)
-
-
-def euclidean_distance(p1, p2):
-    """
-    Calculate the Euclidean distance between two points.
-
-    Args:
-        p1 (tuple): Coordinates of point 1.
-        p2 (tuple): Coordinates of point 2.
 
     Returns:
-        float: The Euclidean distance between the two points.
+        None
     """
-    return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+    x = 0
+    for y in range(length - 1):
+        set_guideline_cell(x, y, grid, resources)
+    x = width - 1
+    for y in range(length - 1):
+        set_guideline_cell(x, y, grid, resources)
+    y = 0
+    for x in range(width - 1):
+        set_guideline_cell(x, y, grid, resources)
+    y = length - 1
+    for x in range(width - 1):
+        set_guideline_cell(x, y, grid, resources)

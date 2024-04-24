@@ -1,3 +1,7 @@
+## Cosa implementare in questa cartella
+
+# Ma siamo sicuri vadano meglio dei listener di eventi piuttosto che i plugin in se'?
+
 Model: Continue to keep agent behaviors along with environmental definitions, entities, and rules. Additionally, raise
 custom Events whenever significant milestones or updates emerge during simulations. It maintains the integrity of the
 Model layer without being influenced by the Controller concerns.

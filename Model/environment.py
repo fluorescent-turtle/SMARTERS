@@ -1,238 +1,243 @@
-import itertools
 import json
 import os
 import random
 
-from mesa.space import SingleGrid, MultiGrid
-from agents import GuideLine
-from Model.model import Simulator
+from mesa.space import MultiGrid
+
+from Controller.environment_plugin import DefaultRandomGrid
+# Import necessary modules
+
+from Controller.robot_plugin import DefaultRobot
 from Utils.utils import (
-    initialize_isolated_area,
-    populate_blocked_areas,
-    populate_perimeter_guidelines,
-    add_base_station,
-    generate_pair,
-    find_largest_blocked_area,
-    add_resource,
+    put_station_guidelines,
+    PerimeterPairStrategy,
+    BiggestRandomPairStrategy,
+    BiggestCenterPairStrategy,
 )
 
 
-def create_random_grid(environment_data, tassel_dim, isolated_area_tassels, plugins):
+def load_data_from_file(file_path):
+    """
+    Load data from an external JSON file.
 
-    # Set environment parameters
-    width = environment_data["width"]
-    length = environment_data["length"]
-    isolated_shape = environment_data["isolated_area_shape"]
-    min_height_blocked = environment_data["min_height_square"]
-    max_height_blocked = environment_data["max_height_square"]
-    min_width_blocked = environment_data["min_width_square"]
-    max_width_blocked = environment_data["max_width_square"]
-    num_blocked_squares = environment_data["num_blocked_squares"]
-    num_blocked_circles = environment_data["num_blocked_circles"]
-    radius = environment_data["radius"]
-    isolated_area_width = environment_data["isolated_area_width"]
-    isolated_area_length = environment_data["isolated_area_length"]
-    ray = environment_data["ray"]
+    Parameters:
+        file_path (str): The path to the JSON file.
 
-    # Initialize model components
-    grid = MultiGrid(int(width), int(length), torus=False)
+    Returns:
+        dict or None: A dictionary containing the loaded data or None if the file doesn't exist.
+    """
+    if not os.path.exists(file_path):
+        print(f"Warning: File '{file_path}' could not be found.")
+        return None
 
-    # Apply all provided plugins to the grid
-    for plugin in plugins:
-        grid = apply_plugin(plugin, grid)
+    # Open the JSON file and read its contents
+    with open(file_path, "r") as json_file:
+        data = json.load(json_file)
+
+    # Extract relevant configuration data
+    robot_config = data.get("robot", {})
+    env_config = data.get("env", {})
+    simulator_config = data.get("simulator", {})
+
+    return robot_config, env_config, simulator_config
+
+
+def creates_robot(robot_plugins):
+    """
+    Create a new instance of the default robot class with given plugins.
+
+    Parameters:
+        robot_plugins (list): List of plugin objects to add to the robot.
+
+    Returns:
+        Robot: An initialized robot object.
+    """
+    robot = DefaultRobot.begin()
+
+    # Add plugins to the robot
+    for module in robot_plugins:
+        module(robot).begin()
+
+    return robot
+
+
+def creates_environment(data_e, tassel_dim, env_plugins, isolated_area_tassels):
+    width = data_e.get("width")
+    length = data_e.get("length")
+    isolated_shape = data_e.get("isolated_area_shape")
+    min_height_blocked = data_e.get("min_height_square")
+    max_height_blocked = data_e.get("max_height_square")
+    min_width_blocked = data_e.get("min_width_square")
+    max_width_blocked = data_e.get("max_width_square")
+    num_blocked_squares = data_e.get("num_blocked_squares")
+    num_blocked_circles = data_e.get("num_blocked_circles")
+    radius = data_e.get("radius")
+    isolated_width = data_e.get("isolated_area_width")
+    isolated_length = data_e.get("isolated_area_length")
+
+    grid = MultiGrid(width, length, torus=False)
 
     resources = []
-    counter = itertools.count
 
-    # Add isolated area to the grid
-    initialize_isolated_area(
-        grid,
+    DefaultRandomGrid(
+        width,
+        length,
         isolated_shape,
-        isolated_area_width,
-        isolated_area_length,
-        environment_data,
-        isolated_area_tassels,
-        radius,
-        tassel_dim,
-        resources,
-    )
-
-    # Populate the grid with blocked areas
-    populate_blocked_areas(
-        resources,
-        num_blocked_squares,
-        num_blocked_circles,
-        grid,
-        min_width_blocked,
-        max_width_blocked,
         min_height_blocked,
         max_height_blocked,
-        ray,
+        min_width_blocked,
+        max_width_blocked,
+        radius,
         tassel_dim,
+        isolated_area_tassels,
+        num_blocked_squares,
+        num_blocked_circles,
+        resources,
+        grid,
+        isolated_width,
+        isolated_length,
+    ).begin()
+
+    for module in env_plugins:
+        module(
+            grid,
+            width,
+            length,
+            isolated_shape,
+            min_height_blocked,
+            max_height_blocked,
+            min_width_blocked,
+            max_width_blocked,
+            radius,
+            tassel_dim,
+            isolated_area_tassels,
+            num_blocked_squares,
+            num_blocked_circles,
+            resources,
+        ).begin()
+
+    return resources, grid
+
+
+def generate_random_corner(width, length):
+    return random.choice(
+        [(0, 0), (0, length - 1), (width - 1, 0), (width - 1, length - 1)]
     )
 
-    position = None
-    while position is None:
-        base_station = generate_pair(
-            environment_data["width"], environment_data["length"]
-        )
-        # Add base station to the perimeter
-        position = add_base_station(
-            grid,
-            base_station,
-            resources,
-        )
 
-    # Populate the grid with perimeter guidelines
-    populate_perimeter_guidelines(int(width), int(length), grid, resources)
-
-    return grid, resources, position
-
-
-def run_model_with_parameters(
-        robot_data, grid, resources, repetitions, cycles, dim_tassel
-):
+def begins_simulation(env_plugins, robot_plugins):
     """
-    Run the simulation with the specified parameters.
+    Initialize and start the simulation process.
 
-    Args:
-        robot_data (dict): Robot information.
-        grid (MultiGrid): Grid to perform the simulation on.
-        resources (list): Resources present in the grid.
-        repetitions (int): Number of times the experiment should repeat.
-        cycles (int): Length of each experiment.
-        dim_tassel (float): Dimension of the tassel
+    Parameters:
+        env_plugins (list): List of plugin objects for the environment.
+        robot_plugins (list): List of plugin objects for the robot.
 
     Returns:
         None
     """
-    for _ in range(repetitions):
+    # Load data from file
+    data_r, data_e, data_s = load_data_from_file("../SetUp/data_file")
+
+    # Extract relevant simulation parameters
+    repetitions = data_s["repetitions"]
+    cycle = data_s["cycle"]
+    tassel_dim = data_s["dim_tassel"]
+
+    # Initialize the environment with plugins
+    resources, grid = creates_environment(data_e, tassel_dim, env_plugins, isolated_area_tassels)
+
+    # Create the robot with plugins
+    current_robot = creates_robot(robot_plugins)
+
+    # Random corner
+    random_corner = generate_random_corner(data_e["width"], data_e["length"])
+    # Add base station and guidelines
+    put_station_guidelines(
+        strategy=PerimeterPairStrategy,
+        grid=grid,
+        width=data_e["width"],
+        length=data_e["length"],
+        resources=resources,
+        random_corner_perimeter=random_corner,
+        central_tassel=None,
+        biggest_area_blocked=[],
+    )
+    # Start the simulation with given parameters
+    run_model_with_parameters(
+        grid,
+        resources,
+        repetitions,
+        cycle,
+        tassel_dim,
+        current_robot,
+    )
+
+    """# Random corner
+    random_corner = generate_random_corner(data_e["width"], data_e["length"])
+    # Add base station and guidelines
+    put_station_guidelines(
+        BiggestRandomPairStrategy,
+        grid,
+        data_e["width"],
+        data_e["length"],
+        resources,
+        random_corner,
+        None,
+        [],
+    )
+    # Start the simulation with given parameters
+    run_model_with_parameters(
+        grid,
+        resources,
+        repetitions,
+        cycle,
+        tassel_dim,
+        current_robot,
+    )
+
+    # Random corner
+    random_corner = generate_random_corner(data_e["width"], data_e["length"])
+    # Add base station and guidelines
+    put_station_guidelines(
+        BiggestCenterPairStrategy,
+        grid,
+        data_e["width"],
+        data_e["length"],
+        resources,
+        random_corner,
+        None,
+        [],
+    )
+    # Start the simulation with given parameters
+    run_model_with_parameters(
+        grid,
+        resources,
+        repetitions,
+        cycle,
+        tassel_dim,
+        current_robot,
+    )"""
+
+
+def run_model_with_parameters(grid, resources, repetitions, cycles, dim_tassel, robot):
+    """
+    Run the model with provided parameters.
+
+    Args:
+        grid: Grid object.
+        resources: List of resources on the grid.
+        repetitions: Number of repetitions.
+        cycles: Number of cycles.
+        dim_tassel: Tassel dimension.
+        robot: Robot
+
+    Returns:
+        None
+    """
+    for _ in range(repetitions):  # todo: non ha senso che ho lo stesso ambiente
         for _ in range(cycles):
-            # Start the simulation
-            simulation = Simulator(grid, robot_data, resources, dim_tassel)
-            simulation.step()
-
-
-def set_cell(x, y, grid, resources):
-    """
-    Place a Guideline agent at a specific location within the grid.
-
-    Args:
-        x (int): X coordinate of the cell.
-        y (int): Y coordinate of the cell.
-        grid (SingleGrid or MultiGrid): Mesa Space object where the agent resides.
-        resources (list): Resources available during initialization.
-
-    Returns:
-        None
-    """
-    guideline = GuideLine((x, y))
-    add_resource(grid, guideline, x, y)
-    resources.append((x, y))
-
-
-def draw_line(x1, y1, x2, y2, grid, resources):
-    """
-    Draw a straight line connecting two points using Bresenham's algorithm.
-
-    Args:
-        x1 (int): Starting point X coordinate.
-        y1 (int): Starting point Y coordinate.
-        x2 (int): Ending point X coordinate.
-        y2 (int): Ending point Y coordinate.
-        grid (SingleGrid or MultiGrid): Mesa Space object where the agents reside.
-        resources (list): Resources available during initialization.
-
-    Returns:
-        None
-    """
-    dx = abs(x2 - x1)
-    dy = abs(y2 - y1)
-    sx = 1 if x1 < x2 else -1
-    sy = 1 if y1 < y2 else -1
-    err = dx - dy
-
-    while (x1, y1) != (x2, y2):
-        set_cell(x1, y1, grid, resources)
-        e2 = 2 * err
-        if e2 > -dy:
-            err -= dy
-            x1 += sx
-        if e2 < dx:
-            err += dx
-            y1 += sy
-    set_cell(x1, y1, grid, resources)
-
-
-def begin_simulation(plugins):
-    """
-    Initiate the simulation by setting up required objects and running it.
-
-    Returns:
-        None
-        :param plugins:
-    """
-    # Load data from external JSON files
-    robot_data = None
-    environment_data = None
-    simulator_data = None
-    isolated_area_tassels = []
-
-    if os.path.exists("../SetUp/robot_file.json"):
-        with open("../SetUp/robot_file.json") as f:
-            robot_data = json.load(f)
-    if os.path.exists("../SetUp/environment_file.json"):
-        with open("../SetUp/environment_file.json") as f:
-            environment_data = json.load(f)
-    if os.path.exists("../SetUp/simulator_file.json"):
-        with open("../SetUp/simulator_file.json") as f:
-            simulator_data = json.load(f)
-    # todo: in setup prende taglio - rimbalzo come plugin
-
-    # Proceed with initialization regardless of existence of JSON files
-    tassel_dim = simulator_data.get("tassel_dim", {}) if simulator_data else {}
-    grid, resources, position = create_random_grid(
-        environment_data, tassel_dim, isolated_area_tassels, plugins
-    )
-
-    if isolated_area_tassels is not []:
-        random_tassel = random.choice(isolated_area_tassels)
-        draw_line(
-            position[0],
-            position[1],
-            random_tassel[0],
-            random_tassel[1],
-            grid,
-            resources,
-        )
-
-        run_model_with_parameters(
-            robot_data,
-            grid,
-            resources,
-            simulator_data["repetitions"],
-            simulator_data["cycles"],
-            simulator_data["dim_tassel"],
-        )
-
-        # Add base station to the largest blocked area randomly
-        biggest_area, coords = find_largest_blocked_area(grid)
-    else:
-        print("Base station position is None")
-        """ 
-        # Calculate position for the base station
-       base_station_position = calculate_position(
-            grid, False, coords, environment_data["width"], environment_data["length"]
-        )
-
-        add_base_station(grid, base_station_position, resources)
-        run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)
-
-        # Add base station to the biggest area nearest to the center
-        # Calculate position for the base station
-        base_station_position1 = calculate_position(
-            grid, True, coords, environment_data["width"], environment_data["length"]
-        )
-
-        add_base_station(grid, base_station_position1, resources)
-        run_model_with_parameters(robot_data, grid, resources, repetitions, cycle)"""
+            """simulation = Simulator(
+                grid, robot_data, resources, dim_tassel, robot
+            )
+            simulation.step()"""
