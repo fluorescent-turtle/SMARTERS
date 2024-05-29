@@ -1,196 +1,215 @@
-import math
-import random
-
-import mesa
 from mesa import Agent
 
 
-def euclidean_distance(point1, point2):
-    return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
-
-
-class Robot(mesa.Agent):
-    def __init__(self, pos, model):
+class Robot(Agent):
+    def __init__(self, unique_id, model, robot_plugin, grass_tassels):
         """
-        Create a new robot.
-        Args:
-            pos: The robot's coordinates on the grid.
-            model: Standard model reference for agent.
-        """
-        super().__init__(pos, model)
-        self.condition = "High"
-
-    def step(self):
-        if self.condition == "Cutting":
-            """for neighbor in self.model.grid.iter_neighbors(self.pos, True):
-            if neighbor.condition == "Fine":
-                neighbor.condition = "On Fire"""
-            self.condition = "Cut"
-
-
-class GrassTassel(mesa.Agent):  # todo: bisogna caricare questo agente
-    """
-    A grass tassel.
-
-    Attributes:
-        x, y: Grid coordinates
-        condition: Can be "High", "Cutting", or "Cut"
-        unique_id: (x,y) tuple.
-    """
-
-    def __init__(self, pos, model, dimension, condition):
-        """
-        Create a new tassel.
-        Args:
-            pos: The tassel's coordinates on the grid.
-            model: Standard model reference for agent.
-            dimension: The tassel's dimension
-        """
-        super().__init__(pos, model)
-        self.pos = pos
-        self.condition = "High"
-        self.dimension = dimension
-
-    def step(self):
-        if self.condition == "Cutting":
-            self.condition = "Cut"
-
-
-class CircularIsolation:
-    def __init__(self, pos, radius):
-        self.pos = pos
-        self.radius = radius
-
-
-class IsolatedArea:
-    def __init__(self, pos):
-        self.pos = pos
-
-
-class Opening:
-    def __init__(self, pos):
-        self.pos = pos
-
-
-class EnclosureTassel:
-    def __init__(self, unique_id):
-        self.unique_id = unique_id
-
-
-class BaseStation:
-    def __init__(self, pos):
-        self.pos = pos
-
-
-class SquaredBlockedArea:
-    def __init__(
-            self,
-            pos,
-    ):
-        self.pos = pos
-
-
-class CircledBlockedArea:
-    def __init__(self, pos, radius):
-        self.pos = pos
-        self.radius = radius
-
-
-class GuideLine:
-    def __init__(self, pos):
-        self.pos = pos
-
-
-class MovingAgent(Agent):
-    """
-    An agent that moves on the grid.
-    """
-
-    def __init__(self, unique_id, grid, robot_data, resources, model, pos):
-        """
-        Initialize a new MovingAgent.
+        Initialize a new Robot agent.
 
         Args:
             unique_id (int): Unique identifier for the agent.
-            grid: Reference to the grid space.
-            robot_data: Data related to the robot.
-            resources (list): List of resource positions.
+            model: Reference to the model.
         """
         super().__init__(unique_id, model)
-        self.grid = grid  # Reference to the grid space
-        self.resources = resources
-        self.pos = pos
 
-    """def get_empty_cells(self):
-
-        return [
-            cell for cell in self.grid.coord_iter() if self.grid.is_cell_empty(cell)
-        ]"""
+        self.robot_plugin = robot_plugin
+        self.grass_tassels = grass_tassels
 
     def step(self):
         """
-        Move the agent to a neighboring cell if available.
+        Execute a step in the agent's behavior.
         """
-        # Get the right neighbour of the agent
-        right_neighbor = (self.pos[0] + 1, self.pos[1])
 
-        if (
-                0 <= right_neighbor[0] < self.grid.width
-                and 0 <= right_neighbor[1] < self.grid.height
-        ):
-            # Check if the right neighbor contains a GuideLine
-            if self.grid.is_cell_empty(right_neighbor):
-                contents = self.grid.get_cell_list_contents([right_neighbor])
-                # Move forward until a non-GuideLine cell is found to the right
-                while contents and isinstance(contents[0], GuideLine):
-                    self.move_agent_to_right()
-            else:
-                # Move to a random neighbor if the right neighbor is not empty
-                self.move_to_random_neighbor()
+        self.robot_plugin.move(self)
 
-        else:
-            # Move back if there's no right neighbor or it's out of bounds
-            self.move_agent_to_left()
 
-    def move_agent_to_left(self):
-        """
-        Move the agent to the left neighbor if available.
-        """
-        left_neighbor = (self.pos[0] - 1, self.pos[1])
-        if self.grid.is_cell_empty(left_neighbor):
-            self.grid.move_agent(self, left_neighbor)
-            self.pos = left_neighbor
-            print("NEW AGENT POSITION ----- ", left_neighbor)
-        else:
-            # If the left neighbor is not empty, move to a random neighbor
-            self.move_to_random_neighbor()
+class GrassTassel(Agent):
+    """
+    An agent representing a tassel of grass.
 
-    def move_agent_to_right(self):
-        """
-        Move the agent to the right neighbor if available.
-        """
-        right_neighbor = (self.pos[0] + 1, self.pos[1])
-        if self.grid.is_cell_empty(right_neighbor):
-            self.grid.move_agent(self, right_neighbor)
-            self.pos = right_neighbor
-            print("NEW AGENT POSITION ----- ", right_neighbor)
+    Attributes:
+        state: State of the grass tassel.
+    """
 
-    def move_to_random_neighbor(self):
+    def __init__(self, unique_id, pos, model):
         """
-        Move the agent to a random neighboring cell if available.
+        Initialize a new GrassTassel agent.
+
+        Args:
+            unique_id: Unique identifier for the agent.
+            model: Reference to the model.
+            state: State of the grass tassel.
         """
-        # Get all possible moves (neighbors) where the agent can move to
-        possible_moves = [
-            move
-            for move in self.grid.get_neighborhood(
-                self.pos, moore=True, include_center=False
-            )
-            if move not in self.resources
-        ]
-        print("POSSIBLE MOVES ----- ", possible_moves)
-        # Choose a random move from the list of possible moves
-        new_position = random.choice(possible_moves)
-        print("NEW AGENT POSITION ----- ", new_position)
-        # Move the agent to the new position on the grid
-        if self.grid.is_cell_empty(new_position):
-            self.grid.move_agent(self, new_position)
+        super().__init__(unique_id, model)
+        self.cut = 0
+        self.pos = pos
+
+    def increment(self):
+        self.cut += 1
+
+    def get_counts(self):
+        return self.cut
+
+    def get(self):
+        return self.pos
+
+
+class CircularIsolation:
+    """
+    Represents a circular isolated area.
+    """
+
+    def __init__(self, pos, radius):
+        """
+        Initialize a new CircularIsolation object.
+
+        Args:
+            pos (tuple): Position of the center of the isolated area (x, y).
+            radius (int): Radius of the isolated area.
+        """
+        self.pos = pos
+        self.radius = radius
+
+    def get(self):
+        return None
+
+
+class IsolatedArea:
+    """
+    Represents an isolated area.
+    """
+
+    def __init__(self, pos):
+        """
+        Initialize a new IsolatedArea object.
+
+        Args:
+            pos (tuple): Position of the isolated area (x, y).
+        """
+        self.pos = pos
+
+    def get(self):
+        return None
+
+
+class Opening:
+    """
+    Represents an opening in an enclosure.
+    """
+
+    def __init__(self, pos):
+        """
+        Initialize a new Opening object.
+
+        Args:
+            pos (tuple): Position of the opening (x, y).
+        """
+        self.pos = pos
+
+    def get(self):
+        return None
+
+
+class EnclosureTassel:
+    """
+    Represents a tassel in an enclosure.
+    """
+
+    def __init__(self, unique_id):
+        """
+        Initialize a new EnclosureTassel object.
+
+        Args:
+            unique_id (int): Unique identifier for the tassel.
+        """
+        self.unique_id = unique_id
+
+    def get(self):
+        return None
+
+
+class BaseStation:
+    """
+    Represents a base station.
+    """
+
+    def __init__(self, pos):
+        """
+        Initialize a new BaseStation object.
+
+        Args:
+            pos (tuple): Position of the base station (x, y).
+        """
+        self.pos = pos
+
+    def clear(self):
+        self.pos = None
+
+    def get(self):
+        return None
+
+
+class SquaredBlockedArea:
+    """
+    Represents a squared blocked area.
+    """
+
+    def __init__(self, pos, label):
+        """
+        Initialize a new SquaredBlockedArea object.
+
+        Args:
+            pos (tuple): Position of the blocked area (x, y).
+            label (label): Label
+        """
+        self.pos = pos
+        self.label = label
+
+    def get(self):
+        return self.label
+
+    def get_pos(self):
+        return self.pos
+
+
+class CircledBlockedArea:
+    """
+    Represents a circled blocked area.
+    """
+
+    def __init__(self, pos, radius, label):
+        """
+        Initialize a new CircledBlockedArea object.
+
+        Args:
+            pos (tuple): Position of the center of the blocked area (x, y).
+            radius (int): Radius of the blocked area.
+            label (int): Label of the blocked area
+        """
+        self.pos = pos
+        self.radius = radius
+        self.label = label
+
+    def get(self):
+        return self.label
+
+
+class GuideLine:
+    """
+    Represents a guideline.
+    """
+
+    def __init__(self, pos):
+        """
+        Initialize a new GuideLine object.
+
+        Args:
+            pos (tuple): Position of the guideline (x, y).
+        """
+        self.pos = pos
+
+    def clear(self):
+        self.pos = None
+
+    def get(self):
+        return None

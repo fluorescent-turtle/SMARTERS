@@ -1,20 +1,22 @@
-import random
+import math
+from datetime import datetime
 
 import mesa
-from mesa import Agent
 
-from Model.agents import GuideLine, GrassTassel
+from Model.agents import GrassTassel, Robot
+from Utils.utils import create_csv, tassels_csv
 
 
-def find_first_empty_cell(model):
-    grid = model.grid
-    width, height = grid.width, grid.height
-    for x in range(width):
-        for y in range(height):
-            cell_content = grid.get_cell_list_contents([(x, y)])
-            if len(cell_content) == 0:
-                return x, y
-    return None
+class GrassCuttingMovementPlugin:
+    def __init__(self, movement_plugin, cutting_type, grid, resources, pos):
+        self.movement_plugin = movement_plugin
+        self.cutting_type = cutting_type
+        self.grid = grid
+        self.resources = resources
+        self.pos = pos
+
+    def move(self):
+        self.movement_plugin.move()
 
 
 class Simulator(mesa.Model):
@@ -24,74 +26,44 @@ class Simulator(mesa.Model):
     Parameters:
     """
 
-    def __init__(self, grid, robot_data, resources, dim_tassel, robot):
-        """
-        Initialize the Simulator model.
-
-        """
+    def __init__(self, grid, cycles, dim_tassel, base_station_pos, robot_plugin, speed):
         super().__init__()
         self.schedule = mesa.time.StagedActivation(self)
-
         self.grid = grid
+        self.cycles = cycles
 
-        self.datacollector = mesa.DataCollector(
-            {
-                "High": lambda m: self.count_type(m, "High"),
-                "Cut": lambda m: self.count_type(m, "Cut"),
-                "Cutting": lambda m: self.count_type(m, "Cutting"),
-            }
-        )
+        self.speed = speed
 
-        # todo: ---sample ---- prendi la prima cella libera
-        cell = find_first_empty_cell(self)
-        print("FIRST EMPTY CELL: ", cell)
-        if cell is not None:
-            self.grid.place_agent(
-                MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1])),
-                (cell[0], cell[1]),
+        self.dim_tassel = dim_tassel
+        self.base_station_pos = base_station_pos
+
+        self.grass_tassels = []
+
+        # Add grass tassels
+        for contents, (x, y) in self.grid.coord_iter():
+            new_grass = GrassTassel(
+                int(datetime.now().time().microsecond), (x, y), self
             )
-            self.schedule.add(
-                MovingAgent(1, grid, robot_data, resources, self, (cell[0], cell[1]))
-            )
+            self.grid.place_agent(new_grass, (x, y))
+            self.schedule.add(new_grass)
+            self.grass_tassels.append(new_grass)
 
-        self.add_grass_tassels(
-            self,
-            self.grid,
-        )
+        self.robot = Robot(0, self, robot_plugin, self.grass_tassels)
 
+        # Add robot
+        self.grid.place_agent(self.robot, self.base_station_pos)
+        self.schedule.add(self.robot)
         self.running = True
-        self.datacollector.collect(self)
 
     def step(self):
-        """
-        Advance the model by one step.
-        """
         self.schedule.step()
+        for i in range(
+                0, self.cycles, math.ceil(self.speed * self.dim_tassel)
+        ):  # todo: quando sa che e' passata un'ora?
+            self.robot.step()
 
-        self.datacollector.collect(self)
-
-    @staticmethod
-    def count_type(model, tassel_condition):
-        """
-        Helper method to count tassels in a given condition.
-        """
-        count = 0
-        for tassel in model.schedule.agents:
-            # if tassel.condition == tassel_condition:
-            count += 1
-        return count
-
-    def add_grass_tassels(self, grid, dim_tassel):
-        for x in range(self.grid.width):
-            for y in range(self.grid.height):
-                if not get_instance(self.grid, x, y):
-                    grass_tassel = GrassTassel((x, y), self, dim_tassel, "High")
-                    add_resource(grid, grass_tassel, x, y)
-
-    def find_neighbors(self, pos, radius):
-        # Implementazione del metodo per trovare i vicini
-        pass
-
-    def notify(self, event_type, event_data):
-        # Implementazione del metodo per notificare gli eventi
-        pass
+        self.running = False
+        tassels_csv(
+            self.grid.width - 1, self.grid.height - 1, "tassels_counts", self.grid
+        )
+        create_csv(self.grid, self.base_station_pos)
