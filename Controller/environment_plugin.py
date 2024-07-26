@@ -357,9 +357,7 @@ def fill_circular_blocked_area(
                 neighbors.append((nb[0], nb[1]))
 
     for neighbor in neighbors:
-        set_guideline_cell(
-            neighbor[0], neighbor[1], grid, grid_width, grid_height, dim_tassel
-        )
+        set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
 
     find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
 
@@ -415,9 +413,7 @@ def add_squared_area(
                 neighbors.append((nb[0], nb[1]))
 
     for neighbor in neighbors:
-        set_guideline_cell(
-            neighbor[0], neighbor[1], grid, grid_width, grid_height, dim_tassel
-        )
+        set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
 
     find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
 
@@ -453,9 +449,7 @@ def aux_lines(blocked_area, grid, grid_width, grid_height, dim_tassel):
     neighbors = get_circular_neighbors(blocked_area)
 
     for neighbor in neighbors:
-        set_guideline_cell(
-            neighbor[0], neighbor[1], grid, grid_width, grid_height, dim_tassel
-        )
+        set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
 
     find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
 
@@ -644,9 +638,7 @@ def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height, dim_tas
                         neighbors.append((nb[0], nb[1]))
 
         for neighbor in neighbors:
-            set_guideline_cell(
-                neighbor[0], neighbor[1], grid, grid_width, grid_height, dim_tassel
-            )
+            set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
 
         find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
     elif t == "squares":
@@ -669,9 +661,7 @@ def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height, dim_tas
                         neighbors.add((nb[0], nb[1]))
 
         for neighbor in neighbors:
-            set_guideline_cell(
-                neighbor[0], neighbor[1], grid, grid_width, grid_height, dim_tassel
-            )
+            set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
 
         find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
     elif t == "is_area":

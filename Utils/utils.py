@@ -437,7 +437,7 @@ def add_base_station(grid, position, grid_width, grid_height):
     )
 
 
-def set_guideline_cell(x, y, grid, grid_width, grid_height, dim_tassel):
+def set_guideline_cell(x, y, grid, grid_width, grid_height):
     # Check if the cell is within the grid boundaries (after wrapping)
     if not within_bounds(grid_width, grid_height, (x, y)):
         return False
@@ -460,30 +460,7 @@ def set_guideline_cell(x, y, grid, grid_width, grid_height, dim_tassel):
     ):
         return False
 
-    # Create the thick guideline object using appropriate methods (replace with your actual implementation)
-    aux_guide = 0.27 / dim_tassel
-    direction = 1
-
-    while aux_guide > 0:
-        # Add the guideline to the grid and resource list
-        if within_bounds(grid_width, grid_height, (x, y)) and not contains_any_resource(
-                grid,
-                (x, y),
-                blocked_areas,
-                grid_width,
-                grid_height,
-        ):
-            add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
-
-        # Update x for the next iteration
-        x += direction
-        if direction == 1:
-            direction = -1
-        else:
-            direction = 1
-            x += 1  # Move one step to the right to continue sequentially
-
-        aux_guide -= 1
+    add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
 
 
 def add_resource(grid, resource, x, y, grid_width, grid_height):
@@ -522,16 +499,16 @@ def find_farthest_point(grid_width, grid_height, fx, fy):
 
 def populate_perimeter_guidelines(grid_width, grid_height, grid, dim_tassel):
     for x in range(0, grid_height):
-        set_guideline_cell(x, 0, grid, grid_width, grid_height, dim_tassel)
+        set_guideline_cell(x, 0, grid, grid_width, grid_height)
 
     for x in range(0, grid_height):
-        set_guideline_cell(x, grid_width, grid, grid_width, grid_height, dim_tassel)
+        set_guideline_cell(x, grid_width, grid, grid_width, grid_height)
 
     for y in range(0, grid_width):
-        set_guideline_cell(0, y, grid, grid_width, grid_height, dim_tassel)
+        set_guideline_cell(0, y, grid, grid_width, grid_height)
 
     for y in range(0, grid_width):
-        set_guideline_cell(grid_height, y, grid, grid_width, grid_height, dim_tassel)
+        set_guideline_cell(grid_height, y, grid, grid_width, grid_height)
 
 
 def get_grass_tassel(grass_tassels, pos):

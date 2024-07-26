@@ -8,16 +8,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4aaf4daf-6ffc-4380-a77a-b78c06119c9e" name="Changes" comment="Initial commit">
-      <change afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Utils/startertorquato.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/default_grid.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/default_grid.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/environment_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/environment_plugin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/movement_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/movement_plugin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/robot_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/robot_plugin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/agents.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/agents.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/starter.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/starter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Utils/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -370,7 +360,7 @@
       <workItem from="1720446839429" duration="20110000" />
       <workItem from="1720623227223" duration="9432000" />
       <workItem from="1720694645816" duration="251775000" />
-      <workItem from="1721752124522" duration="70823000" />
+      <workItem from="1721752124522" duration="71137000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -516,7 +506,15 @@
       <option name="project" value="LOCAL" />
       <updated>1717003023047</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Initial commit">
+      <option name="closed" value="true" />
+      <created>1721984234820</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1721984234820</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -554,37 +552,37 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Utils/utils.py</url>
-          <line>323</line>
+          <line>322</line>
           <option name="timeStamp" value="21" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Utils/utils.py</url>
-          <line>325</line>
+          <line>324</line>
           <option name="timeStamp" value="22" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Utils/utils.py</url>
-          <line>374</line>
+          <line>373</line>
           <option name="timeStamp" value="23" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Utils/utils.py</url>
-          <line>388</line>
+          <line>387</line>
           <option name="timeStamp" value="24" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Utils/utils.py</url>
-          <line>407</line>
+          <line>406</line>
           <option name="timeStamp" value="25" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Utils/utils.py</url>
-          <line>409</line>
+          <line>408</line>
           <option name="timeStamp" value="26" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Utils/utils.py</url>
-          <line>396</line>
+          <line>395</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
       </breakpoints>
@@ -601,7 +599,7 @@
     <SUITE FILE_PATH="coverage/smarters$environment.coverage" NAME="environment Coverage Results" MODIFIED="1711711443723" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Model" />
     <SUITE FILE_PATH="coverage/smarters$model.coverage" NAME="model Coverage Results" MODIFIED="1707405031715" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smarters$.coverage" NAME=" Coverage Results" MODIFIED="1707124357868" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/smarters$main.coverage" NAME="main Coverage Results" MODIFIED="1721983455224" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smarters$main.coverage" NAME="main Coverage Results" MODIFIED="1721983961286" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smarters$default_plugins.coverage" NAME="default_plugins Coverage Results" MODIFIED="1711543742662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Controller" />
     <SUITE FILE_PATH="coverage/smarters$gui.coverage" NAME="gui Coverage Results" MODIFIED="1707298009178" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
