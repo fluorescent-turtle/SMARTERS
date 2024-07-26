@@ -1,69 +1,189 @@
-import math
+import os
 from datetime import datetime
 
 import mesa
+import pandas as pd
+import seaborn as sns
+from matplotlib import pyplot as plt
 
-from Model.agents import GrassTassel, Robot
-from Utils.utils import create_csv, tassels_csv
-
-
-class GrassCuttingMovementPlugin:
-    def __init__(self, movement_plugin, cutting_type, grid, resources, pos):
-        self.movement_plugin = movement_plugin
-        self.cutting_type = cutting_type
-        self.grid = grid
-        self.resources = resources
-        self.pos = pos
-
-    def move(self):
-        self.movement_plugin.move()
+from Model.agents import (
+    GrassTassel,
+    Robot,
+    SquaredBlockedArea,
+    CircledBlockedArea,
+)
 
 
 class Simulator(mesa.Model):
-    """
-    A model representing the behavior of a lawnmower robot.
+    def __init__(
+            self,
+            grid,
+            cycles,
+            base_station_pos,
+            robot_plugin,
+            speed,
+            autonomy,
+            i,
+            j,
+            cycle_data,
+            filename,
+            dim_tassel,
+            created
+    ):
+        """
+        Initialize the simulator for the grass cutting simulation.
 
-    Parameters:
-    """
-
-    def __init__(self, grid, cycles, dim_tassel, base_station_pos, robot_plugin, speed):
+        :param created:
+        :param grid: The simulation grid.
+        :param cycles: Number of cycles to run the simulation.
+        :param base_station_pos: The position of the base station.
+        :param robot_plugin: The robot plugin used for the simulation.
+        :param speed: The speed of the robot.
+        :param autonomy: The autonomy of the robot in terms of cycles it can run.
+        :param i: The map number (identifier).
+        :param j: The repetition number of the simulation run.
+        :param cycle_data: Data collected during the simulation cycles.
+        :param filename: The filename for saving the data.
+        :param dim_tassel: The dimension of the grass tassel.
+        """
         super().__init__()
         self.schedule = mesa.time.StagedActivation(self)
         self.grid = grid
         self.cycles = cycles
-
         self.speed = speed
-
-        self.dim_tassel = dim_tassel
         self.base_station_pos = base_station_pos
-
         self.grass_tassels = []
+        self.robot = None
+        self.dim_tassel = dim_tassel
+        self.initialize_grass_tassels()
+        self.initialize_robot(robot_plugin, autonomy, base_station_pos)
+        self.i = i
+        self.j = j
 
-        # Add grass tassels
-        for contents, (x, y) in self.grid.coord_iter():
-            new_grass = GrassTassel(
-                int(datetime.now().time().microsecond), (x, y), self
-            )
-            self.grid.place_agent(new_grass, (x, y))
-            self.schedule.add(new_grass)
-            self.grass_tassels.append(new_grass)
+        self.running = True
+        self.cycle_data = cycle_data
+        self.filename = filename
 
-        self.robot = Robot(0, self, robot_plugin, self.grass_tassels)
+    def initialize_grass_tassels(self):
+        """Initialize the grass tassels and place them in the grid."""
+        cord_iter = self.grid.coord_iter()
+        for contents, (x, y) in cord_iter:
+            if (
+                    GrassTassel not in contents
+                    and SquaredBlockedArea not in contents
+                    and CircledBlockedArea not in contents
+            ):
+                # Place a new grass tassel if the cell is not blocked or already occupied by another grass tassel
+                pos = (x, y)
+                new_grass = GrassTassel(pos)
+                self.grass_tassels.append(new_grass)
+                self.grid.place_agent(new_grass, pos)
 
-        # Add robot
+    def initialize_robot(self, robot_plugin, autonomy, base_station_pos):
+        """
+        Initialize the robot and place it at the base station.
+
+        :param robot_plugin: The robot plugin for movement and other functions.
+        :param autonomy: The autonomy of the robot in terms of steps it can take before recharging.
+        :param base_station_pos: The position of the base station where the robot starts.
+        """
+        # Create the robot with all necessary attributes
+        self.robot = Robot(
+            len(self.grass_tassels) + 1,
+            self,
+            robot_plugin,
+            self.grass_tassels,
+            autonomy,
+            self.speed,
+            2,
+            base_station_pos,
+            0,
+        )
+        # Place the robot at the base station and add it to the schedule
         self.grid.place_agent(self.robot, self.base_station_pos)
         self.schedule.add(self.robot)
-        self.running = True
 
     def step(self):
-        self.schedule.step()
-        for i in range(
-                0, self.cycles, math.ceil(self.speed * self.dim_tassel)
-        ):  # todo: quando sa che e' passata un'ora?
-            self.robot.step()
+        """Perform a single step of the simulation."""
+        self.schedule.step()  # Progress the simulation schedule by one step
+        cycle = 0
 
-        self.running = False
-        tassels_csv(
-            self.grid.width - 1, self.grid.height - 1, "tassels_counts", self.grid
+        # Main simulation loop
+        while self.cycles > 0:
+            while self.robot.get_autonomy() > 0:
+                self.robot.step()  # Move the robot until it runs out of autonomy
+            self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
+            self.cycles -= self.robot.get_autonomy()  # Decrease the remaining cycles
+            cycle += 1
+            self._process_cycle_data(cycle)  # Process the data for the current cycle
+
+        self.running = False  # Mark the simulation as not running
+
+    def _process_cycle_data(self, cycle):
+        """
+        Process the data collected during each cycle and save it.
+
+        :param cycle: The current cycle number.
+        """
+        counts = [[0 for i in range(self.grid.height)] for j in range(self.grid.width)]
+
+        for grass_tassel in self.grass_tassels:
+            x, y = grass_tassel.get()
+            counts[x][y] = grass_tassel.get_counts()
+
+        # Create a DataFrame to store the counts
+        df = pd.DataFrame(counts)
+        df = df.rename(
+            columns={j: j * self.dim_tassel for j in range(self.grid.height)}
         )
-        create_csv(self.grid, self.base_station_pos)
+        df.insert(loc=0, column="num_mappa", value=self.i)
+        df.insert(loc=1, column="ripetizione", value=self.j)
+        df.insert(loc=2, column="cycle", value=cycle)
+        df.insert(
+            loc=3,
+            column="x",
+            value=[i * self.dim_tassel for i in range(self.grid.width)],
+        )
+
+        output_dir = os.path.abspath("./View/")  # Define the output directory
+
+        def reduce_ticks(ticks, step):
+            return [tick if i % step == 0 else "" for i, tick in enumerate(ticks)]
+
+        # Generate ticks for x and y axes
+        xtick = [j * self.dim_tassel for j in range(self.grid.height)]
+        ytick = [i * self.dim_tassel for i in range(self.grid.width)]
+
+        tick_step = 10  # Define the step for tick reduction
+        reduced_xtick = reduce_ticks(xtick, tick_step)
+        reduced_ytick = reduce_ticks(ytick, tick_step)
+
+        # Create a heatmap of the counts
+        fig, ax = plt.subplots()
+        ax.xaxis.tick_top()  # Place x-axis ticks at the top
+
+        sns.heatmap(
+            data=counts,
+            annot=False,
+            cmap="BuGn",
+            cbar_kws={"label": "Counts"},
+            robust=True,
+            vmin=-1,
+            ax=ax,
+            xticklabels=reduced_xtick,
+            yticklabels=reduced_ytick
+        )
+        timestamp = datetime.now().strftime(
+            "%Y-%m-%d_%H:%M:%S"
+        )  # Generate a timestamp for the filename
+        file_path = os.path.join(
+            output_dir, f"heatmap_{timestamp}_cycle_{cycle}.png"
+        )  # Define the file path
+
+        plt.savefig(file_path)  # Save the heatmap as a PNG file
+        plt.close(fig)  # Close the figure
+
+        # Save the DataFrame as a CSV file
+        df.to_csv(
+            os.path.join(output_dir, f"{self.filename}_cycle_{cycle}.csv"), index=False
+        )

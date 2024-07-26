@@ -1,10 +1,11 @@
-import csv
+import cProfile
 import json
 import math
 import os
+import pstats
 import random
-from collections import Counter
-from pathlib import Path
+from io import StringIO
+from typing import Union, Tuple
 
 try:
     from Model.agents import (
@@ -15,329 +16,350 @@ try:
         CircledBlockedArea,
         Opening,
         Robot,
-        CircularIsolation,
         IsolatedArea,
     )
 except ImportError:
-    print('Error: Could not import `Model.agents`. Make sure it is installed and accessible.')
+    print(
+        "Error: Could not import `Model.agents`. Make sure it is installed and accessible."
+    )
     exit()
 
 
-class StationGuidelinesStrategy:
-    """
-    Abstract class representing different strategies to place base stations
-    based on guidelines.
-    """
-
-    def locate_base_station(
-            self, grid, center_tassel, biggest_blocked_area, resources, width, length
+def validate_and_adjust_base_station(coords, grid_width, grid_height, grid):
+    if (
+            coords is None
+            or not within_bounds(grid_width, grid_height, coords)
+            or contains_any_resource(
+        grid,
+        coords,
+        [SquaredBlockedArea, CircledBlockedArea, IsolatedArea],
+        grid_width,
+        grid_height,
+    )
     ):
-        """
-        Method to locate the base station on the grid.
 
-        Args:
-            grid (list): The grid representing the area.
-            center_tassel (tuple): Coordinates of the center tassel.
-            biggest_blocked_area (list): List of blocked areas.
-            resources (dict): Resources available.
-            width (int): Width of the grid.
-            length (int): Length of the grid.
+        def maybe_move_to_adjacent_valid_tile():
+            if coords:
+                x, y = coords
+            else:
+                x, y = (0, 0)
+            offsets = (
+                (-1, 0),
+                (1, 0),
+                (0, -1),
+                (0, 1),
+            )
+            for dx, dy in offsets:
+                new_x, new_y = x + dx, y + dy
+                if within_bounds(grid_width, grid_height, (new_x, new_y)):
+                    return new_x, new_y
+            return coords
 
-        Returns:
-            tuple: Coordinates of the located base station.
-        """
+        return maybe_move_to_adjacent_valid_tile()
+
+    return coords
+
+
+def perimeter_try_generating_base_station(
+        grid_width,
+        grid_height,
+        base_station,
+        grid,
+) -> Tuple[int, int]:
+    def generate_perimeter_pair(width: int, length: int) -> Tuple[int, int]:
+        return (
+            (0, random.randint(0, width))
+            if random.choice([0, 1]) == 0
+            else (random.randint(0, length), 0)
+        )
+
+    while base_station is None:
+        try:
+            tmp_bs = generate_perimeter_pair(grid_width, grid_height)
+            base_station = validate_and_adjust_base_station(
+                tmp_bs, grid_width, grid_height, grid
+            )
+        except ValueError:
+            base_station = None
+    return base_station
+
+
+def big_center_try_generating_base_station(
+        center_tassel,
+        grid_width,
+        grid_height,
+        base_station,
+        biggest_blocked_area,
+        grid,
+):
+    if biggest_blocked_area:
+        while base_station is None:
+            try:
+                tmp_bs = generate_biggest_center_pair(
+                    center_tassel, biggest_blocked_area
+                )
+                base_station = validate_and_adjust_base_station(
+                    tmp_bs, grid_width, grid_height, grid
+                )
+            except ValueError:
+                base_station = None
+        return base_station
+    else:
+        return None
+
+
+class StationGuidelinesStrategy:
+    def locate_base_station(
+            self,
+            grid,
+            center_tassel,
+            biggest_blocked_area,
+            grid_width,
+            grid_height,
+    ):
         pass
 
 
 class PerimeterPairStrategy(StationGuidelinesStrategy):
-    """Class to represent the strategy of placing a base station at a perimeter pair"""
-
     def locate_base_station(
-            self, grid, center_tassel, biggest_blocked_area, resources, width, length
+            self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height
     ):
         base_station = None
+        attempt_limit = 35
 
-        while base_station is None:
-            try:
-                base_station = self.generate_perimeter_pair(width, length)
-            except ValueError as e:
-                print(f"Error generating perimeter pair: {e}")
-                base_station = None
+        for _ in range(attempt_limit):
+            base_station = perimeter_try_generating_base_station(
+                grid_width, grid_height, base_station, grid
+            )
+            if base_station is not None and add_base_station(
+                    grid, base_station, grid_width, grid_height
+            ):
+                return base_station
+        return None
 
-        return add_base_station(grid, base_station, resources)
 
-    @staticmethod
-    def generate_perimeter_pair(width, length):
-        """Generate a random pair of coordinates within the grid bounds."""
-        choice = random.choice([0, 1])
-        if choice == 0:
-            return 0, random.randint(0, width - 1)
+class BiggestRandomPairStrategy(StationGuidelinesStrategy):
+    def locate_base_station(
+            self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height
+    ) -> Union[Tuple[int, int], None]:
+
+        base_station = None
+        attempt_limit = 35
+
+        def generate_biggest_pair(bba):
+            random_choice = random.choice(bba) if bba else None
+            print(f"RANDOM CHOICE {random_choice}")
+            return random_choice
+
+        def big_random_try_generating_base_station(bs):
+            while bs is None:
+                try:
+                    tmp_bs = generate_biggest_pair(biggest_blocked_area)
+                    if tmp_bs is not None:
+                        bs = validate_and_adjust_base_station(
+                            tmp_bs, grid_width, grid_height, grid
+                        )
+                    else:
+                        return None
+                except ValueError:
+                    bs = None
+            return bs
+
+        if biggest_blocked_area:
+            for _ in range(attempt_limit):
+                base_station = big_random_try_generating_base_station(base_station)
+                if base_station is not None and add_base_station(
+                        grid, base_station, grid_width, grid_height
+                ):
+                    return base_station
+            return None
         else:
-            return random.randint(0, length - 1), 0
+            return None
 
 
-def generate_biggest_pair(biggest_blocked_area):
-    """
-    Function to generate the biggest pair from the blocked area.
+class BiggestCenterPairStrategy(StationGuidelinesStrategy):
+    def locate_base_station(
+            self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height
+    ) -> Union[Tuple[int, int], None]:
+        base_station = None
+        attempt_limit = 35
 
-    Args:
-        biggest_blocked_area (list): List of blocked areas.
+        for _ in range(attempt_limit):
+            base_station = big_center_try_generating_base_station(
+                center_tassel,
+                grid_width,
+                grid_height,
+                base_station,
+                biggest_blocked_area,
+                grid,
+            )
+            if base_station is not None and add_base_station(
+                    grid, base_station, grid_width, grid_height
+            ):
+                return base_station
+        return None
 
-    Returns:
-        tuple: Coordinates of the generated biggest pair.
-    """
-    random_tassel = random.choice(biggest_blocked_area)
-    return random_tassel
+
+def mowing_time(speed_robot, autonomy_robot_seconds, cutting_diameter, total_area):
+    # Calculate the area covered per pass
+    # cutting_area = math.pi * (cutting_diameter / 2) ** 2
+
+    # Calculate the number of passes required to cover the total area
+    # passes_needed = math.ceil(total_area / cutting_area)
+
+    # Calculate the total distance covered (assuming an optimized path)
+    # total_distance = passes_needed * cutting_area / (math.pi * cutting_diameter)
+
+    # Calculate the total time required
+    total_time_minutes = total_area / speed_robot
+    # total_distance / speed_robot
+
+    # Convert total time from minutes to seconds
+    total_time_seconds = total_time_minutes * 60
+    # print(f"AUTONOMY: {autonomy_robot_seconds} ======== TOTAL TIME: {total_time_seconds}")
+    # Check if the autonomy is sufficient to complete the job
+    if total_time_seconds > autonomy_robot_seconds:
+        print(f"Warning: The robot's autonomy might not be sufficient.")
+        pass
+
+    return total_time_seconds
 
 
-def euclidean_distance(p1, p2):
-    """
-    Compute the Euclidean distance between two points.
-
-    Args:
-        p1 (Tuple[float]): First point represented as a tuple of float values (x, y).
-        p2 (Tuple[float]): Second point represented as a tuple of float values (x, y).
-
-    Returns:
-        float: The Euclidean distance between the two points.
-    """
+def euclidean_distance(p1: Tuple[int, int], p2: Tuple[int, int]) -> float:
     return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
 
 def generate_biggest_center_pair(center_tassel, biggest_blocked_area):
-    """
-    Function to generate the biggest pair closest to the center tassel.
-
-    Args:
-        center_tassel (tuple): Coordinates of the center tassel.
-        biggest_blocked_area (list): List of blocked areas.
-
-    Returns:
-        tuple or None: Coordinates of the generated biggest pair closest to the center tassel,
-        or None if the blocked area is empty.
-    """
-    if len(biggest_blocked_area) > 0:
-        nearest_tuple = biggest_blocked_area[0]
-
-        nearest_distance = euclidean_distance(nearest_tuple, center_tassel)
-
-        for tuple_elem in biggest_blocked_area:
-            curr_distance = euclidean_distance(tuple_elem, center_tassel)
-            if curr_distance < nearest_distance:
-                nearest_distance = curr_distance
-                nearest_tuple = tuple_elem
-
-        return nearest_tuple
-    else:
+    if not biggest_blocked_area:
         return None
 
-
-def get_most_frequent_elements(resources, grid):
-    """
-    Function to get the most frequent elements from a list of resources.
-
-    Args:
-        resources (list): List of resources.
-        grid: Current grid
-    Returns:
-        list: List of the most frequent blocked areas.
-    """
-    # Count occurrences of each label
-    label_count = Counter(
-        obj
-        for obj in resources
-        if contains_resource(grid, (obj[0], obj[1]), SquaredBlockedArea)
+    nearest_tuple = min(
+        biggest_blocked_area, key=lambda pos: euclidean_distance(pos, center_tassel)
     )
 
-    if label_count:
-        most_frequent_label, frequency = label_count.most_common(1)[0]
-        elements_with_most_frequent_label = [
-            obj
-            for obj in resources
-            if obj == most_frequent_label
-               and contains_resource(grid, (obj[0], obj[1]), SquaredBlockedArea)
-        ]
-        return elements_with_most_frequent_label
-    else:
+    return nearest_tuple
+
+
+"""def dfs(grid, x, y, resource, visited, grid_width, grid_height):
+    stack = [(x, y)]
+    count = 0
+
+    while stack:
+        cx, cy = stack.pop()
+
+        if (cx, cy) in visited:
+            continue
+
+        visited.add((cx, cy))
+        count += 1
+
+        for nx, ny in [(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)]:
+            if (
+                0 <= nx < grid_width
+                and 0 <= ny < grid_height
+                and (nx, ny) not in visited
+            ):
+                if grid[ny][nx] == resource:
+                    stack.append((nx, ny))
+
+    return count"""
+
+"""def get_largest_successive_cells(
+    grid, grid_width: int, grid_height: int, resources: Set[Tuple[int, int]]
+) -> List[Tuple[int, int]]:
+    visited = set()
+    max_size = 0
+    max_resource = None
+
+    for x, y in resources:
+        if (x, y) not in visited:
+            resource = grid[x][y]
+            if contains_resource(
+                grid, (x, y), SquaredBlockedArea, grid_width, grid_height
+            ):  # Assuming contains_resource correctly identifies the resource
+                size = dfs(grid, x, y, resource, visited, grid_width, grid_height)
+                if size >= max_size:
+                    max_size = size
+                    max_resource = resource
+
+    if max_resource is None:
         return []
 
+    # Re-run DFS to get all positions of the largest group
+    visited.clear()
 
-def load_data_from_file(file_path):
-    """
-    Load data from an external JSON file.
+    for x, y in resources:
+        if (x, y) not in visited and grid[y][x] == max_resource:
+            dfs(grid, x, y, max_resource, visited, grid_width, grid_height)
 
-    Parameters:
-        file_path (str): The path to the JSON file.
+    result = list(visited)
+    return result"""
 
-    Returns:
-        dict or None: A dictionary containing the loaded data or None if the file doesn't exist.
-    """
+
+def load_data_from_file(file_path: str) -> Union[Tuple[dict, dict, dict], None]:
     if not os.path.exists(file_path):
-        print(f"Warning: File '{file_path}' could not be found.")
         return None
 
-    # Open the JSON file and read its contents
     with open(file_path, "r") as json_file:
         data = json.load(json_file)
 
-    # Extract relevant configuration data
-    robot_config = data.get("robot", {})
-    env_config = data.get("env", {})
-    simulator_config = data.get("simulator", {})
-
-    return robot_config, env_config, simulator_config
-
-
-def generate_random_corner(width, length):
-    """
-    Generate a random corner coordinate pair within the specified dimensions.
-
-    :param width: Width of the area being considered
-    :param length: Length of the area being considered
-    :return: Tuple representing x and y coordinates of a randomly chosen corner
-    """
-    return random.choice(
-        [(0, 0), (0, length - 1), (width - 1, 0), (width - 1, length - 1)]
-    )
-
-
-class BiggestRandomPairStrategy(StationGuidelinesStrategy):
-    """
-    Class to represent the strategy of placing a base station at the biggest random pair
-    """
-
-    def locate_base_station(
-            self, grid, central_tassel, biggest_blocked_area, resources, width, length
-    ):
-
-        base_station = None
-
-        while not base_station:
-            base_station = generate_biggest_pair(biggest_blocked_area)
-
-        return add_base_station(grid, base_station, resources)
-
-
-def find_central_tassel(grid, dim_tassel):
-    rows = grid.height - 1 / dim_tassel
-    cols = grid.width - 1 / dim_tassel
-
-    if rows % 2 == 1 and cols % 2 == 1:
-        # Numero dispari di righe e colonne
-        central_row = rows // 2
-        central_col = cols // 2
-        return central_row, central_col
-    else:
-        # Numero pari di righe o colonne
-        central_row = rows // 2 if rows % 2 == 1 else rows // 2 - 1
-        central_col = cols // 2 if cols % 2 == 1 else cols // 2 - 1
-        return central_row, central_col
-
-
-class BiggestCenterPairStrategy(StationGuidelinesStrategy):
-    """
-    Class to represent the strategy of placing a base station at the biggest center pair
-    """
-
-    def locate_base_station(
-            self, grid, center_tassel, biggest_blocked_area, resources, width, length
-    ):
-
-        base_station = None
-
-        while not base_station:
-            base_station = generate_biggest_center_pair(
-                center_tassel, biggest_blocked_area
-            )
-
-        return add_base_station(grid, base_station, resources)
+    return data.get("robot", {}), data.get("env", {}), data.get("simulator", {})
 
 
 def put_station_guidelines(
         strategy,
         grid,
-        width,
-        length,
-        resources,
+        grid_width: int,
+        grid_height: int,
         random_corner_perimeter,
         central_tassel,
         biggest_area_blocked,
 ):
-    """Put station guidelines based on a given strategy."""
     base_station_pos = strategy.locate_base_station(
-        strategy, grid, central_tassel, biggest_area_blocked, resources, width, length
-    )
-    populate_perimeter_guidelines(width, length, grid, resources)
-    draw_line(
-        base_station_pos[0],
-        base_station_pos[1],
-        random_corner_perimeter[0],
-        random_corner_perimeter[1],
-        grid,
-        resources,
+        strategy, grid, central_tassel, biggest_area_blocked, grid_width, grid_height
     )
 
-    # Find the farthest point from base station
-    farthest_point = find_farthest_point(
-        width, length, base_station_pos[0], base_station_pos[1]
-    )
+    print("random corner perimeter: ", random_corner_perimeter)
+    if base_station_pos and random_corner_perimeter:
 
-    # If farthest point is found, draw line from base station to it
-    if farthest_point is not None:
         draw_line(
             base_station_pos[0],
             base_station_pos[1],
-            farthest_point[0],
-            farthest_point[1],
+            random_corner_perimeter[0],
+            random_corner_perimeter[1],
             grid,
-            resources,
+            grid_width,
+            grid_height,
         )
+
+        # Find the farthest point from base station
+        farthest_point = find_farthest_point(
+            grid_width, grid_height, base_station_pos[0], base_station_pos[1]
+        )
+
+        # If farthest point is found, draw line from base station to it
+        if farthest_point is not None:
+            draw_line(
+                base_station_pos[0],
+                base_station_pos[1],
+                farthest_point[0],
+                farthest_point[1],
+                grid,
+                grid_width,
+                grid_height,
+            )
 
     return base_station_pos
 
 
-def add_base_station(grid, position, resources):
-    """
-    Add a base station to the grid.
-
-    Args:
-        grid (MultiGrid): MultiGrid object.
-        position (tuple): Position to add the base station.
-        resources: List of resources on the grid.
-
-    Returns:
-        tuple or None: Position of the base station if added, None otherwise.
-    """
-    if within_bounds(grid, position):
-        base_station = BaseStation((position[0], position[1]))
-        add_resource(grid, base_station, position[0], position[1])
-        resources.append((position[0], position[1]))
-
-        return position
-
-    return None
+def contains_any_resource(grid, pos, resource_types, grid_width, grid_height):
+    for rtype in resource_types:
+        if contains_resource(grid, pos, rtype, grid_width, grid_height):
+            return True
+    return False
 
 
-def draw_line(x1, y1, x2, y2, grid, resources):
-    """
-    Draw a straight line connecting two points using Bresenham's algorithm, avoiding existing Guideline objects.
-
-    Args:
-        x1 (int): Starting point X coordinate.
-        y1 (int): Starting point Y coordinate.
-        x2 (int): Ending point X coordinate.
-        y2 (int): Ending point Y coordinate.
-        grid (MultiGrid): Mesa MultiGrid object where the agents and Guideline objects reside.
-        resources (list): Resources available during initialization.
-
-    Returns:
-        None
-    """
-
-    def validate_coordinate(coord):
-        i, j = coord
-        return 0 <= i < grid.width and 0 <= j < grid.height
-
+def draw_line(x1, y1, x2, y2, grid, grid_width, grid_height):
     dx = abs(x2 - x1)
     dy = abs(y2 - y1)
 
@@ -346,22 +368,33 @@ def draw_line(x1, y1, x2, y2, grid, resources):
 
     x, y = x1, y1
 
-    cells_to_add = []
+    cells_to_add = set()
     err = dx - dy
 
-    while (x, y) != (x2, y2) and validate_coordinate((x, y)):
+    while (x, y) != (x2, y2) and within_bounds(grid_width, grid_height, (x, y)):
         curr_cell = grid[x][y]
-        if curr_cell is not None and not contains_resource(grid, (x, y), GuideLine):
+        if curr_cell is not None and not contains_any_resource(
+                grid,
+                (x, y),
+                [
+                    CircledBlockedArea,
+                    SquaredBlockedArea,
+                    IsolatedArea,
+                    BaseStation,
+                ],
+                grid_width,
+                grid_height,
+        ):
             possible_dirs = [(sx, sy), (sx, -sy), (-sx, sy), (-sx, -sy)]
             dir_idx = random.randint(0, 1)
             new_dir = possible_dirs[dir_idx]
             sx_, sy_ = new_dir
-            resources.append((x, y))
+
         else:
             sx_, sy_ = sx, sy
 
-        cells_to_add.append((x, y))
-        resources.append((x, y))
+        cells_to_add.add((x, y))
+        add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
 
         e2 = 2 * err
         if e2 > -dy:
@@ -371,100 +404,17 @@ def draw_line(x1, y1, x2, y2, grid, resources):
             err += dx
             y += sy_
 
-        print("GUIDELINE  DRAW LINE --------------------------: (x, y)", (x, y))
+    cells_to_add.add((x2, y2))
 
-    cells_to_add.append((x2, y2))
-    resources.append((x2, y2))
-    print("GUIDELINE  DRAW LINE --------------------------: (x2, y2)", (x2, y2))
-
-    return cells_to_add, resources
+    return cells_to_add
 
 
-def create_csv(grid, base_station_pos):
-    if base_station_pos is not None:
-        name = "grid_base_station.csv"
-    else:
-        name = "grid.csv"
-
-    with open(Path("./View/" + name), mode="w", newline="") as my_file:
-        # Create a writer object
-        writer = csv.writer(my_file)
-
-        # Write header row
-        writer.writerow(["Width: " + str(grid.width - 1)])
-        writer.writerow(["Height: " + str(grid.height - 1)])
-
-        for x in range(grid.width - 1):
-            for y in range(grid.height - 1):
-                cell_contents = grid.get_cell_list_contents((x, y))
-                writer.writerow(["Grid Tassel " f"({x},{y}): "])
-                content_row = []
-                for agent in cell_contents:
-                    if isinstance(agent, GuideLine):
-                        content_row.append("GuideLine")
-                    elif isinstance(agent, GrassTassel):
-                        content_row.append("GrassTassel")
-                    elif isinstance(agent, SquaredBlockedArea):
-                        content_row.append("SquaredBlockedArea")
-                    elif isinstance(agent, CircledBlockedArea):
-                        content_row.append("CircledBlockedArea")
-                    elif isinstance(agent, Opening):
-                        content_row.append("Opening")
-                    elif isinstance(agent, Robot):
-                        content_row.append("Robot")
-                    elif isinstance(agent, CircularIsolation):
-                        content_row.append("CircularIsolation")
-                    elif isinstance(agent, IsolatedArea):
-                        content_row.append("IsolatedArea")
-                    elif isinstance(agent, BaseStation) and agent.pos is not None:
-                        content_row.append("BaseStation")
-
-                writer.writerow(content_row)
-
-
-def tassels_csv(width, height, name, grid):
-    flat_indices = ((x, y) for x in range(width - 1) for y in range(height - 1))
-
-    with open(Path("./View/" + name + ".csv"), mode="w", newline="") as my_file:
-        # Create a writer object
-        writer = csv.writer(my_file)
-
-        # Write header row
-        writer.writerow(["Width:", str(width - 1), "Height:", str(height - 1)])
-
-        for i, j in flat_indices:
-            cell_contents = grid.get_cell_list_contents((i, j))
-
-            specific_agent = next(
-                (agent for agent in cell_contents if isinstance(agent, GrassTassel)),
-                None,
-            )
-            writer.writerow(
-                [
-                    "Grid tassel:" + f"{i},{j}",
-                    "counts: " + str(specific_agent.get_counts())
-                    if specific_agent
-                    else ["N/A"],
-                ]
-            )
-
-
-def contains_resource(grid, cell, resource):
-    """
-    Check if a specific resource is present in a cell of the grid.
-
-    Args:
-        grid (Grid): The grid containing the cells.
-        cell (tuple): Coordinates of the cell to check.
-        resource (type): The type of resource to check for.
-
-    Returns:
-        bool: True if the cell contains the specified resource, False otherwise.
-    """
+def contains_resource(grid, cell, resource, grid_width, grid_height):
     x, y = cell
 
     # Add these checks to ensure x and y are within bounds
-    if 0 <= x < grid.width and 0 <= y < grid.height:
+    if 0 <= x < grid_height and 0 <= y < grid_width:
+
         cell_contents = grid.get_cell_list_contents(cell)
 
         specific_agent = next(
@@ -476,117 +426,147 @@ def contains_resource(grid, cell, resource):
         else:
             return False
     else:
-        raise IndexError("Cell coordinates are outside the grid boundaries: ", (x, y))
+        return False
 
 
-def set_guideline_cell(x, y, grid, resources):
-    """
-    Place a Guideline agent at a specific location within the grid.
+def add_base_station(grid, position, grid_width, grid_height):
+    base_station = BaseStation((position[0], position[1]))
 
-    Args:
-        x (int): X coordinate of the cell.
-        y (int): Y coordinate of the cell.
-        grid (SingleGrid or MultiGrid): Mesa Space object where the agent resides.
-        resources (list): Resources available during initialization.
-
-    Returns:
-        None
-    """
-    guideline = GuideLine((x, y))
-    add_resource(grid, guideline, x, y)
-    resources.append((x, y))
+    return add_resource(
+        grid, base_station, position[0], position[1], grid_width, grid_height
+    )
 
 
-def add_resource(grid, resource, x, y):
-    """
-    Add a resource to the specified coordinates on the grid, if within bounds.
+def set_guideline_cell(x, y, grid, grid_width, grid_height, dim_tassel):
+    # Check if the cell is within the grid boundaries (after wrapping)
+    if not within_bounds(grid_width, grid_height, (x, y)):
+        return False
 
-    Args:
-        grid (Grid): The grid to add the resource to.
-        resource: The resource to add.
-        x (int): The x-coordinate of the cell.
-        y (int): The y-coordinate of the cell.
-    """
-    if within_bounds(grid, (x, y)):
+    blocked_areas = [
+        CircledBlockedArea,
+        SquaredBlockedArea,
+        IsolatedArea,
+        BaseStation,
+        GuideLine,
+    ]
+
+    # Check for existing resources at the wrapped cell
+    if contains_any_resource(
+            grid,
+            (x, y),
+            blocked_areas,
+            grid_width,
+            grid_height,
+    ):
+        return False
+
+    # Create the thick guideline object using appropriate methods (replace with your actual implementation)
+    aux_guide = 0.27 / dim_tassel
+    direction = 1
+
+    while aux_guide > 0:
+        # Add the guideline to the grid and resource list
+        if within_bounds(grid_width, grid_height, (x, y)) and not contains_any_resource(
+                grid,
+                (x, y),
+                blocked_areas,
+                grid_width,
+                grid_height,
+        ):
+            add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
+
+        # Update x for the next iteration
+        x += direction
+        if direction == 1:
+            direction = -1
+        else:
+            direction = 1
+            x += 1  # Move one step to the right to continue sequentially
+
+        aux_guide -= 1
+
+
+def add_resource(grid, resource, x, y, grid_width, grid_height):
+    if within_bounds(grid_width, grid_height, (x, y)):
         grid.place_agent(resource, (x, y))
+        return True
+    else:
+        return False
 
 
-def within_bounds(grid, pos):
-    """
-    Check if a position is within the grid bounds.
-
-    Args:
-        grid (SingleGrid or MultiGrid): Grid object.
-        pos (tuple): Position to check.
-
-    Returns:
-        bool: True if position is within bounds, False otherwise.
-    """
-
-    x, y = pos
-    return 0 <= x < grid.width and 0 <= y < grid.height
+def within_bounds(grid_width, grid_height, pos):
+    return 0 <= pos[0] < grid_height and 0 <= pos[1] < grid_width
 
 
-def find_farthest_point(width, height, fx, fy):
-    """
-    Find the farthest point from a fixed point on a rectangular grid.
-
-    Args:
-        width (int): Width of the grid.
-        height (int): Height of the grid.
-        fx (int): X coordinate of the fixed point.
-        fy (int): Y coordinate of the fixed point.
-
-    Returns:
-        tuple: Coordinates of the farthest point.
-    """
+def find_farthest_point(grid_width, grid_height, fx, fy):
     max_dist = 0
     result = (-1, -1)
 
-    for x in range(width):
-        for y in range(height):
-            if x != fx or y != fy:
-                dist = math.sqrt((x - fx) ** 2 + (y - fy) ** 2)
-                if dist > max_dist:
-                    max_dist = dist
-                    result = (x, y)
+    eligible_points = [
+        (0, grid_height),
+        (grid_width, 0),
+        (0, 0),
+        (grid_width, grid_height),
+    ]
 
-    print("FARTHEST POINT: ", result)
+    for point in eligible_points:
+        dist = euclidean_distance((fx, fy), point)
+        if dist > max_dist:
+            max_dist = dist
+            result = point
+            if dist > grid_width or dist > grid_height:  # Early return if very far
+                return result
 
     return result
 
 
-def populate_perimeter_guidelines(width, length, grid, resources):
-    """
-    Populate perimeter guidelines around blocked areas.
+def populate_perimeter_guidelines(grid_width, grid_height, grid, dim_tassel):
+    for x in range(0, grid_height):
+        set_guideline_cell(x, 0, grid, grid_width, grid_height, dim_tassel)
 
-    Args:
-        width (int): Width of the grid.
-        length (int): Length of the grid.
-        grid (MultiGrid): MultiGrid object.
-        resources (list): List of resources on the grid.
+    for x in range(0, grid_height):
+        set_guideline_cell(x, grid_width, grid, grid_width, grid_height, dim_tassel)
 
-    Returns:
-        None
-    """
+    for y in range(0, grid_width):
+        set_guideline_cell(0, y, grid, grid_width, grid_height, dim_tassel)
 
-    x = 0
-    for y in range(length - 1):
-        set_guideline_cell(x, y, grid, resources)
-    x = width - 1
-    for y in range(length - 1):
-        set_guideline_cell(x, y, grid, resources)
-    y = 0
-    for x in range(width - 1):
-        set_guideline_cell(x, y, grid, resources)
-    y = length - 1
-    for x in range(width - 1):
-        set_guideline_cell(x, y, grid, resources)
+    for y in range(0, grid_width):
+        set_guideline_cell(grid_height, y, grid, grid_width, grid_height, dim_tassel)
 
 
-def get_grass_tassel(grid, resources, pos):
-    for res in resources:
-        if res == pos and contains_resource(grid, pos, GrassTassel):
+def get_grass_tassel(grass_tassels, pos):
+    # print(f"grass tassels: {grass_tassels}")
+    for res in grass_tassels:
+
+        # print(f"RES: {res}")
+        if res.get() == pos:
             return res
 
     return None
+
+
+def find_central_tassel(rows, cols):
+    if rows % 2 == 1 and cols % 2 == 1:
+        central_row = rows // 2
+        central_col = cols // 2
+        return central_row, central_col
+    else:
+        central_row = rows // 2 if rows % 2 == 1 else rows // 2 - 1
+        central_col = cols // 2 if cols % 2 == 1 else cols // 2 - 1
+        return central_row, central_col
+
+
+def profile_code(func):
+    def wrapper(*args, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+        result = func(*args, **kwargs)
+        pr.disable()
+        s = StringIO()
+        sortby = "cumulative"
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        return result
+
+    return wrapper

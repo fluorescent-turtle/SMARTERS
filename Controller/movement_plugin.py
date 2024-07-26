@@ -2,28 +2,13 @@ from abc import abstractmethod
 
 
 class MovementPlugin:
-    """A base class for plugins that handle character movement."""
-
-    def __init__(self, grid, resources: list, pos):
-        """Initialize the MovementPlugin object.
-
-        Args:
-            grid (Grid): The Grid object representing the game board.
-            resources (list): A list of Resources objects.
-            pos (tuple): The starting position of the character on the grid.
-        """
+    def __init__(self, grid, pos, grid_width, grid_height):
         self.grid = grid
-        self.resources = resources
         self.pos = pos
-        # Define possible directions of movement
-        self.directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-        # Initialize the current direction index
-        self.current_direction_index = 0
-        # Initialize the number of steps taken in the same direction
-        self.steps_in_same_direction = 0
+
         # Calculate the width and height of the grid
-        self.grid_width = grid.width - 1
-        self.grid_height = grid.height - 1
+        self.grid_width = grid_width
+        self.grid_height = grid_height
 
     @abstractmethod
     def move(self, agent):

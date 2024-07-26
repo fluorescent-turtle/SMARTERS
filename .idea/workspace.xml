@@ -8,17 +8,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4aaf4daf-6ffc-4380-a77a-b78c06119c9e" name="Changes" comment="Initial commit">
-      <change afterPath="$PROJECT_DIR$/Controller/environment_plugin.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Controller/robot_plugin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Utils/startertorquato.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Controller/appunti.md" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/appunti.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/default_grid.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/default_grid.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/environment_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/environment_plugin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/movement_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/movement_plugin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Controller/robot_plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/Controller/robot_plugin.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/agents.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/agents.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/environment.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/environment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/model.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Model/starter.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/starter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Utils/stuff.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/stuff.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Utils/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,6 +47,9 @@
     &quot;accountId&quot;: &quot;e789848e-655c-49a0-b1d1-5ab48e7285da&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/.venv/lib/python3.10/site-packages/mesa/space.py" root0="SKIP_INSPECTION" />
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -62,7 +65,7 @@
     <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 4
+  &quot;associatedIndex&quot;: 1
 }</component>
   <component name="ProjectId" id="2bMJD3hyDbi6hGLFwmp9BGkUGnv" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -70,30 +73,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;Python tests.Python tests in agent_tassel.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in tassel_test.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python.default_plugins.executor&quot;: &quot;Run&quot;,
-    &quot;Python.environment.executor&quot;: &quot;Run&quot;,
-    &quot;Python.gui.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.model.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/fluorescent-turtle/Documents/uni/magistrale/IQC/quantum&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "Python tests.Python tests in agent_tassel.py.executor": "Run",
+    "Python tests.Python tests in tassel_test.py.executor": "Run",
+    "Python.default_plugins.executor": "Run",
+    "Python.environment.executor": "Run",
+    "Python.gui.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.model.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/home/fluorescent-turtle/Documents/uni/magistrale/IQC/quantum",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/Utils" />
@@ -214,6 +218,11 @@
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python tests.Python tests in /home/fluorescent-turtle/Documents/uni/simulatore/smarters/agent_tassel.py" />
+      <item itemvalue="Python tests.Python tests in /home/fluorescent-turtle/Documents/uni/simulatore/smarters/tassel_test.py" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python tests.Python tests in /home/fluorescent-turtle/Documents/uni/simulatore/smarters/tassel_test.py" />
@@ -224,8 +233,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-PY-241.14494.241" />
-        <option value="bundled-python-sdk-0509580d9d50-28c9f5db9ffe-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-241.14494.241" />
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PY-241.18034.82" />
+        <option value="bundled-python-sdk-975db3bf15a3-2767605e8bc2-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-241.18034.82" />
       </set>
     </attachedChunks>
   </component>
@@ -289,6 +298,79 @@
       <workItem from="1712925593011" duration="9983000" />
       <workItem from="1713167147575" duration="63731000" />
       <workItem from="1713791975256" duration="42619000" />
+      <workItem from="1713942300100" duration="4530000" />
+      <workItem from="1713977020747" duration="1970000" />
+      <workItem from="1714132948834" duration="533000" />
+      <workItem from="1714150278142" duration="49855000" />
+      <workItem from="1714981571180" duration="13873000" />
+      <workItem from="1715262317445" duration="6187000" />
+      <workItem from="1715273125591" duration="8393000" />
+      <workItem from="1715441173908" duration="14350000" />
+      <workItem from="1715608765432" duration="59072000" />
+      <workItem from="1715870580934" duration="3993000" />
+      <workItem from="1715886763672" duration="733000" />
+      <workItem from="1715947625635" duration="13262000" />
+      <workItem from="1716276491915" duration="9805000" />
+      <workItem from="1716293601671" duration="60784000" />
+      <workItem from="1716533799963" duration="3305000" />
+      <workItem from="1716539549264" duration="3000" />
+      <workItem from="1716544215142" duration="42353000" />
+      <workItem from="1716795905608" duration="14776000" />
+      <workItem from="1716907251069" duration="10703000" />
+      <workItem from="1716968613921" duration="29189000" />
+      <workItem from="1717055580644" duration="29159000" />
+      <workItem from="1717401601749" duration="45458000" />
+      <workItem from="1717660542648" duration="42698000" />
+      <workItem from="1718124796445" duration="247000000" />
+      <workItem from="1719058974210" duration="2182000" />
+      <workItem from="1719061542606" duration="3490000" />
+      <workItem from="1719070084943" duration="636000" />
+      <workItem from="1719077572455" duration="1338000" />
+      <workItem from="1719133016304" duration="772000" />
+      <workItem from="1719138213508" duration="648000" />
+      <workItem from="1719214542339" duration="8880000" />
+      <workItem from="1719226464294" duration="19208000" />
+      <workItem from="1719301724026" duration="5227000" />
+      <workItem from="1719321535909" duration="5931000" />
+      <workItem from="1719342130476" duration="1683000" />
+      <workItem from="1719387124602" duration="11081000" />
+      <workItem from="1719399654656" duration="2844000" />
+      <workItem from="1719409876792" duration="5225000" />
+      <workItem from="1719419937107" duration="137000" />
+      <workItem from="1719421649600" duration="2485000" />
+      <workItem from="1719424725872" duration="782000" />
+      <workItem from="1719430076662" duration="141000" />
+      <workItem from="1719473335121" duration="12028000" />
+      <workItem from="1719492291418" duration="1401000" />
+      <workItem from="1719494678745" duration="5004000" />
+      <workItem from="1719504236029" duration="4947000" />
+      <workItem from="1719559124168" duration="4072000" />
+      <workItem from="1719566843860" duration="1666000" />
+      <workItem from="1719570465051" duration="8895000" />
+      <workItem from="1719592815685" duration="27347000" />
+      <workItem from="1719823074219" duration="2493000" />
+      <workItem from="1719861098679" duration="4821000" />
+      <workItem from="1719921906014" duration="10990000" />
+      <workItem from="1719946832349" duration="7967000" />
+      <workItem from="1719996456982" duration="15694000" />
+      <workItem from="1720021003540" duration="10887000" />
+      <workItem from="1720081246985" duration="2807000" />
+      <workItem from="1720085517114" duration="297000" />
+      <workItem from="1720087529821" duration="9677000" />
+      <workItem from="1720099816680" duration="302000" />
+      <workItem from="1720101275001" duration="22000" />
+      <workItem from="1720105025180" duration="844000" />
+      <workItem from="1720108703723" duration="2618000" />
+      <workItem from="1720115218462" duration="3060000" />
+      <workItem from="1720119657851" duration="10224000" />
+      <workItem from="1720164268140" duration="71000" />
+      <workItem from="1720167078700" duration="7471000" />
+      <workItem from="1720429389855" duration="1333000" />
+      <workItem from="1720431715071" duration="4039000" />
+      <workItem from="1720446839429" duration="20110000" />
+      <workItem from="1720623227223" duration="9432000" />
+      <workItem from="1720694645816" duration="251775000" />
+      <workItem from="1721752124522" duration="70823000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -418,11 +500,38 @@
       <option name="project" value="LOCAL" />
       <updated>1710860268626</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Initial commit">
+      <option name="closed" value="true" />
+      <created>1713967409456</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1713967409456</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Initial commit">
+      <option name="closed" value="true" />
+      <created>1717003023047</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1717003023047</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CHECK_CODE_CLEANUP_BEFORE_PROJECT_COMMIT" value="true" />
@@ -430,11 +539,69 @@
     <option name="LAST_COMMIT_MESSAGE" value="Initial commit" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Controller/robot_plugin.py</url>
+          <line>208</line>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Controller/robot_plugin.py</url>
+          <line>203</line>
+          <option name="timeStamp" value="13" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Utils/utils.py</url>
+          <line>323</line>
+          <option name="timeStamp" value="21" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Utils/utils.py</url>
+          <line>325</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Utils/utils.py</url>
+          <line>374</line>
+          <option name="timeStamp" value="23" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Utils/utils.py</url>
+          <line>388</line>
+          <option name="timeStamp" value="24" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Utils/utils.py</url>
+          <line>407</line>
+          <option name="timeStamp" value="25" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Utils/utils.py</url>
+          <line>409</line>
+          <option name="timeStamp" value="26" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Utils/utils.py</url>
+          <line>396</line>
+          <option name="timeStamp" value="27" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/smarters$environment.coverage" NAME="environment Coverage Results" MODIFIED="1711711443723" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Model" />
     <SUITE FILE_PATH="coverage/smarters$model.coverage" NAME="model Coverage Results" MODIFIED="1707405031715" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smarters$.coverage" NAME=" Coverage Results" MODIFIED="1707124357868" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/smarters$main.coverage" NAME="main Coverage Results" MODIFIED="1713895339662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/smarters$main.coverage" NAME="main Coverage Results" MODIFIED="1721983455224" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/smarters$default_plugins.coverage" NAME="default_plugins Coverage Results" MODIFIED="1711543742662" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Controller" />
     <SUITE FILE_PATH="coverage/smarters$gui.coverage" NAME="gui Coverage Results" MODIFIED="1707298009178" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
