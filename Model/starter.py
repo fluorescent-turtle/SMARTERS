@@ -3,6 +3,7 @@ import importlib
 import logging
 import math
 import os
+import random
 from datetime import datetime
 
 import pandas as pd
@@ -65,17 +66,6 @@ class Starter:
 
 
 def execute_plugins(env_plugins, grid_width, grid_height):
-    """
-    Execute environment plugins on the grid.
-
-    Args:
-        env_plugins (list): Environment plugins to execute.
-        grid_width (int): Width of the grid.
-        grid_height (int): Height of the grid.
-
-    Returns:
-        tuple: Grid, resources, and corner after plugin execution.
-    """
     corner = None, None
     grid = None
     for plugin in env_plugins:
@@ -88,20 +78,7 @@ def execute_plugins(env_plugins, grid_width, grid_height):
 
 
 def create_grid(grid_type, data_e, grid_width, grid_height, dim_tassel, env_plugins):
-    """
-    Create a grid using the provided parameters.
 
-    Args:
-        grid_type (str): Type of grid to create ('default' or 'random').
-        data_e (dict): Data for environment setup.
-        grid_width (int): Width of the grid.
-        grid_height (int): Height of the grid.
-        dim_tassel (int): Dimension of the tassel.
-        env_plugins
-
-    Returns:
-        MultiGrid: The created grid or None if an error occurs.
-    """
     if grid_type == "default":
         raw_shapes = data_e["circles"] + data_e["squares"] + data_e["isolated_area"]
         return DefaultCreatedGrid(
@@ -162,21 +139,23 @@ def split_at_first_hyphen(string):
     return string[:first_hyphen_index].strip(), string[first_hyphen_index + 1:].strip()
 
 
-def process_grid_data(grid_height, grid_width, i, j, filename, dim_tassel, grid):
+def process_grid_data(
+        grid_height, grid_width, map_index, repetition_index, filename, dim_tassel, grid
+):
     """
     Process the grid data and save it to a CSV file.
 
     Args:
         grid_height (int): Height of the grid.
         grid_width (int): Width of the grid.
-        i (int): Index of the current map.
-        j (int): Index of the current repetition.
+        map_index (int): Index of the current map.
+        repetition_index (int): Index of the current repetition.
         filename (str): Filename for saving the grid data.
         dim_tassel (int): Dimension of the tassel.
         grid (MultiGrid): The grid to process.
 
     """
-    external_data = [["Empty" for i in range(grid_width)] for j in range(grid_height)]
+    external_data = [["Empty" for _ in range(grid_width)] for _ in range(grid_height)]
     for x in range(grid_height):
         for y in range(grid_width):
             external_data[x][y] = grid.get_cell_list_contents([(x, y)])
@@ -184,9 +163,11 @@ def process_grid_data(grid_height, grid_width, i, j, filename, dim_tassel, grid)
     output_dir = os.path.abspath("./View/")
     path = os.path.join(output_dir, filename)
     df = pd.DataFrame(external_data)
-    df = df.rename(columns={j: j * dim_tassel for j in range(grid_width)})
-    df.insert(loc=0, column="num_mappa", value=i)
-    df.insert(loc=1, column="ripetizione", value=j)
+    df = df.rename(
+        columns={col_index: col_index * dim_tassel for col_index in range(grid_width)}
+    )
+    df.insert(loc=0, column="num_mappa", value=map_index)
+    df.insert(loc=1, column="ripetizione", value=repetition_index)
     df.insert(loc=2, column="x", value=[dim_tassel * i for i in range(grid_height)])
 
     df.to_csv(path, index=False)
@@ -240,8 +221,20 @@ def runner(
     process_grid_data(grid_height, grid_width, i, j, filename, dim_tassel, grid)
 
     current_data = []
-    Simulator(grid, cycles, base_station_pos, plugin, data_r["speed"], data_r["autonomy"] - (data_r["autonomy"] / 10),
-              i, j, current_data, filename, dim_tassel, created).step()
+    Simulator(
+        grid,
+        cycles,
+        base_station_pos,
+        plugin,
+        data_r["speed"],
+        data_r["autonomy"] - (data_r["autonomy"] / 10),
+        i,
+        j,
+        current_data,
+        filename,
+        dim_tassel,
+        created,
+    ).step()
     cycle_data.append(current_data)
 
 
@@ -261,19 +254,16 @@ def run_model_with_parameters(env_plugins, robot_plugin):
     cycles = data_s["cycle"] * 3600
     dim_tassel = data_s["dim_tassel"]
     created = False
-    grid_width = math.ceil(data_e["width"] / dim_tassel) + 1
-    grid_height = math.ceil(data_e["length"] / dim_tassel) + 1
+    grid_width = math.ceil(data_e["width"] / dim_tassel)
+    grid_height = math.ceil(data_e["length"] / dim_tassel)
 
-    """if data_e["circles"] is None:
-    else:
-        grid_width = math.ceil(data_e["width"])
-        grid_height = math.ceil(data_e["length"])
-        print(f"GRID WIDTH {grid_width} -- {grid_height}")
-        create = True"""
+    # Create seed
+    seed = random.randint(0, grid_width * grid_height)
+    random.seed(seed)
 
     for i in range(num_maps):
         cycle_data = []
-        if (not data_e["circles"] is None) and not created:
+        if (data_e.get("circles")) and not created:
             grid, random_corner, biggest_area_blocked = create_grid(
                 "default", data_e, grid_width, grid_height, dim_tassel, env_plugins
             )
@@ -309,7 +299,6 @@ def run_model_with_parameters(env_plugins, robot_plugin):
                 grid1,
                 grid_width,
                 grid_height,
-
                 random_corner,
                 None,
                 biggest_area_blocked,
@@ -329,7 +318,7 @@ def run_model_with_parameters(env_plugins, robot_plugin):
                     cycle_data=cycle_data,
                     filename=f"perimeter_model{get_current_datetime()}.csv",
                     dim_tassel=dim_tassel,
-                    created=created
+                    created=created,
                 )
 
             if biggest_area_blocked:

@@ -28,7 +28,7 @@ class Simulator(mesa.Model):
             cycle_data,
             filename,
             dim_tassel,
-            created
+            created,
     ):
         """
         Initialize the simulator for the grass cutting simulation.
@@ -129,6 +129,7 @@ class Simulator(mesa.Model):
 
         for grass_tassel in self.grass_tassels:
             x, y = grass_tassel.get()
+            # x, y = int(x*self.dim_tassel), int(y*self.dim_tassel)
             counts[x][y] = grass_tassel.get_counts()
 
         # Create a DataFrame to store the counts
@@ -171,7 +172,7 @@ class Simulator(mesa.Model):
             vmin=-1,
             ax=ax,
             xticklabels=reduced_xtick,
-            yticklabels=reduced_ytick
+            yticklabels=reduced_ytick,
         )
         timestamp = datetime.now().strftime(
             "%Y-%m-%d_%H:%M:%S"

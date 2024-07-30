@@ -51,7 +51,15 @@ def validate_and_adjust_base_station(coords, grid_width, grid_height, grid):
             )
             for dx, dy in offsets:
                 new_x, new_y = x + dx, y + dy
-                if within_bounds(grid_width, grid_height, (new_x, new_y)):
+                if within_bounds(
+                        grid_width, grid_height, (new_x, new_y)
+                ) and not contains_any_resource(
+                    grid,
+                    coords,
+                    [SquaredBlockedArea, CircledBlockedArea, IsolatedArea],
+                    grid_width,
+                    grid_height,
+                ):
                     return new_x, new_y
             return coords
 
@@ -155,12 +163,9 @@ class BiggestRandomPairStrategy(StationGuidelinesStrategy):
             while bs is None:
                 try:
                     tmp_bs = generate_biggest_pair(biggest_blocked_area)
-                    if tmp_bs is not None:
-                        bs = validate_and_adjust_base_station(
-                            tmp_bs, grid_width, grid_height, grid
-                        )
-                    else:
-                        return None
+                    bs = validate_and_adjust_base_station(
+                        tmp_bs, grid_width, grid_height, grid
+                    )
                 except ValueError:
                     bs = None
             return bs
@@ -319,18 +324,17 @@ def put_station_guidelines(
         strategy, grid, central_tassel, biggest_area_blocked, grid_width, grid_height
     )
 
-    print("random corner perimeter: ", random_corner_perimeter)
-    if base_station_pos and random_corner_perimeter:
-
-        draw_line(
-            base_station_pos[0],
-            base_station_pos[1],
-            random_corner_perimeter[0],
-            random_corner_perimeter[1],
-            grid,
-            grid_width,
-            grid_height,
-        )
+    if base_station_pos:
+        if random_corner_perimeter:
+            draw_line(
+                base_station_pos[0],
+                base_station_pos[1],
+                random_corner_perimeter[0],
+                random_corner_perimeter[1],
+                grid,
+                grid_width,
+                grid_height,
+            )
 
         # Find the farthest point from base station
         farthest_point = find_farthest_point(
@@ -451,16 +455,14 @@ def set_guideline_cell(x, y, grid, grid_width, grid_height):
     ]
 
     # Check for existing resources at the wrapped cell
-    if contains_any_resource(
+    if not contains_any_resource(
             grid,
             (x, y),
             blocked_areas,
             grid_width,
             grid_height,
     ):
-        return False
-
-    add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
+        add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
 
 
 def add_resource(grid, resource, x, y, grid_width, grid_height):

@@ -31,6 +31,7 @@ def build_squared_isolated_area(
         grid_width,
         grid_height,
 ):
+
     enclosure_tassels = []
 
     def create_resources(x_range, y_range):
@@ -122,17 +123,8 @@ def build_squared_isolated_area(
 
 
 def circular_isolation(
-        grid,
-        radius,
-        x_start,
-        y_start,
-        dim_opening,
-        grid_width,
-        grid_height,
+        grid, radius, x_start, y_start, dim_opening, grid_width, grid_height
 ):
-    """
-    Create a circular isolated area with an opening.
-    """
     enclosure_tassels = []
     for i in range(-radius, radius + 1):
         for j in range(-radius, radius + 1):
@@ -174,14 +166,18 @@ def initialize_isolated_area(
         grid_height,
         radius,
 ):
-    """
-    Initialize the isolated area based on the specified shape.
-    """
+    def choose_random_corner():
+        seed = random.random()
+        if seed == 0:
+            return 0, 0
+        elif seed == (grid_width + grid_height):
+            return grid_height, grid_width
+        elif seed % 2 == 0:
+            return 0, grid_width
+        else:
+            return grid_height, 0
 
-    def choose_random_corner(width, height):
-        return random.choice([(0, 0), (0, height), (width, 0), (width, height)])
-
-    x_corner, y_corner = choose_random_corner(grid_width, grid_height)
+    x_corner, y_corner = choose_random_corner()
     if isolated_width != 0:
         dim_opening = random.randint(1, isolated_width) % grid_width
 
@@ -198,13 +194,7 @@ def initialize_isolated_area(
             )
         else:
             return circular_isolation(
-                grid,
-                radius,
-                x_corner,
-                y_corner,
-                dim_opening,
-                grid_width,
-                grid_height,
+                grid, radius, x_corner, y_corner, dim_opening, grid_width, grid_height
             )
 
 
@@ -267,99 +257,28 @@ def fill_circular_blocked_area(
         grid_height,
         dim_tassel,
 ):
-    def can_place(pos):
-        blocked_areas = [
-            GuideLine,
-            IsolatedArea,
-            SquaredBlockedArea,
-            CircledBlockedArea,
-            BaseStation,
-        ]
-        try:
-            return (
-                    0 < pos[0] < grid_width
-                    and 0 < pos[1] < grid_height
-                    and not contains_any_resource(
-                grid,
-                pos,
-                blocked_areas,
-                grid_width,
-                grid_height,
-            )
-            )
-        except IndexError:
-            print(f"Invalid position: {pos}")
-            return False
-
-    squared_circle_count = int((math.pi * rad * rad) / 2)
-    angle_delta = math.pi * 2 / squared_circle_count
-
     blocked_tassels = []
+    for i in range(grid_height):  # Looping through x-coordinate range.
+        for j in range(grid_width):  # Looping through y-coordinate range.
+            dist = ((i - start_x) ** 2 + (j - start_y) ** 2) ** 0.5
+            if dist <= int(rad / dim_tassel):
+                point = (i, j)
+                new_resource = CircledBlockedArea(
+                    point
+                )  # Creating a new blocked area resource.
 
-    for idx in range(squared_circle_count):  # Iterating over the squared circle count.
-        angle = angle_delta * idx  # Calculating the angle for current iteration.
-        center = (  # Calculating the center of the current circle.
-            round(start_x + rad * math.cos(angle)),  # X coordinate of the center.
-            round(start_y + rad * math.sin(angle)),  # Y coordinate of the center.
-        )
-        next_center = (  # Calculating the center of the next circle.
-            round(
-                center[0] + math.cos(angle + angle_delta) * 1 * 0.5
-            ),  # X coordinate of the next center.
-            round(
-                center[1] + math.sin(angle + angle_delta) * 1 * 0.5
-            ),  # Y coordinate of the next center.
-        )
-        midpoint = (  # Calculating the midpoint between current and next centers.
-            round((next_center[0] + center[0]) / 2),  # X coordinate of the midpoint.
-            round((next_center[1] + center[1]) / 2),  # Y coordinate of the midpoint.
-        )
+                add_resource(
+                    grid,
+                    new_resource,
+                    point[0],
+                    point[1],
+                    grid_width,
+                    grid_height,
+                )
+                blocked_tassels.append(point)
 
-        dist = math.sqrt(  # Calculating the distance between midpoint and center.
-            (midpoint[0] - center[0]) ** 2 + (midpoint[1] - center[1]) ** 2
-        )
-        """if (
-            dist < 1 * 0.5
-        ):  # , f"Distance {dist} exceeded allowed limit."  # Assertion to check distance limit.
-            continue"""
-        for i in range(-rad, rad + 1):  # Looping through x-coordinate range.
-            for j in range(-rad, rad + 1):  # Looping through y-coordinate range.
-                if (
-                        i ** 2 + j ** 2 <= rad ** 2
-                ):  # Checking if the point lies within the circle.
-                    point = (
-                        midpoint[0] + i,
-                        midpoint[1] + j,
-                    )  # Calculating the point within the circle.
-                    if can_place(point) and not is_near_opening(
-                            grid, point, grid_width, grid_height
-                    ):
-                        new_resource = CircledBlockedArea(
-                            point
-                        )  # Creating a new blocked area resource.
-
-                        add_resource(
-                            grid,
-                            new_resource,
-                            point[0],
-                            point[1],
-                            grid_width,
-                            grid_height,
-                        )
-                        blocked_tassels.append(point)
-
-    neighbors = []
-    for tassel in blocked_tassels:
-        for nb in grid.get_neighborhood(tassel, moore=True, include_center=False):
-            if nb not in blocked_tassels and not is_near_opening(
-                    grid, tassel, grid_width, grid_height
-            ):
-                neighbors.append((nb[0], nb[1]))
-
-    for neighbor in neighbors:
-        set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
-
-    find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
+    for bt in blocked_tassels:
+        aux_lines(bt, grid, grid_width, grid_height, dim_tassel)
 
 
 def add_squared_area(
@@ -372,37 +291,36 @@ def add_squared_area(
         grid,
         grid_width,
         grid_height,
-        dim_tassel
+        dim_tassel,
 ):
     columns = calculate_variance(min_width_blocked, max_width_blocked)
     rows = calculate_variance(min_height_blocked, max_height_blocked)
-    num_columns = math.ceil(columns + min_width_blocked)
-    num_rows = math.ceil(rows + min_height_blocked)
+    num_rows = math.ceil((columns + min_width_blocked) / dim_tassel)
+    num_columns = math.ceil((rows + min_height_blocked) / dim_tassel)
     blocked_area = []
     resources = set()
 
     for j in range(num_rows):
-        tassel_y = coord_y + j
-        if 0 <= tassel_y < grid_height:
-            for i in range(num_columns):
-                tassel_x = coord_x + i
-                if (
-                        0 <= tassel_x < grid_width
-                        and not is_near_opening(
+        tassel_x = coord_x + j
+        for i in range(num_columns):
+            tassel_y = coord_y + i
+            if (
+                    within_bounds(grid_width, grid_height, (tassel_x, tassel_y))
+                    and not is_near_opening(
                     grid, (tassel_x, tassel_y), grid_width, grid_height
                 )
-                        and (tassel_x, tassel_y) not in resources
-                ):
-                    add_resource(
-                        grid,
-                        SquaredBlockedArea((tassel_x, tassel_y)),
-                        tassel_x,
-                        tassel_y,
-                        grid_width,
-                        grid_height,
-                    )
-                    resources.add((tassel_x, tassel_y))
-                    blocked_area.append((tassel_x, tassel_y))
+                    and (tassel_x, tassel_y) not in resources
+            ):
+                add_resource(
+                    grid,
+                    SquaredBlockedArea((tassel_x, tassel_y)),
+                    tassel_x,
+                    tassel_y,
+                    grid_width,
+                    grid_height,
+                )
+                resources.add((tassel_x, tassel_y))
+                blocked_area.append((tassel_x, tassel_y))
 
     neighbors = []
     for tassel in blocked_area:
@@ -427,7 +345,7 @@ def aux_lines(blocked_area, grid, grid_width, grid_height, dim_tassel):
             """Check if a coordinate value is inside grid bounds"""
             return -1 < h < max_val
 
-        n = set()  # Initialize empty set to store unique neighbor coordinates
+        n = []  # Initialize empty set to store unique neighbor coordinates
         x, y = cell
 
         # Loop through possible relative offsets (-1, 0, 1) along both axes
@@ -440,9 +358,7 @@ def aux_lines(blocked_area, grid, grid_width, grid_height, dim_tassel):
                         _valid_coordinate(nx, grid_width)
                         and _valid_coordinate(ny, grid_height)
                 ) and ((abs(dx) + abs(dy)) == 1):
-                    n.add((nx, ny))
-                else:
-                    print(f"Invalid position: ({nx}, {ny})")
+                    n.append((nx, ny))
 
         return n
 
@@ -466,9 +382,6 @@ def is_near_opening(grid, point, grid_width, grid_height):
 
 
 def generate_valid_agent_position(grid, grid_width, grid_height, max_attempts=35):
-    """
-    Generate a valid agent position that is not near any blocked area or opening.
-    """
     blocked_types = [
         IsolatedArea,
         SquaredBlockedArea,
@@ -476,8 +389,9 @@ def generate_valid_agent_position(grid, grid_width, grid_height, max_attempts=35
         Opening,
         GuideLine,
     ]
-    for _ in range(max_attempts):
-        x, y = random.randrange(0, grid_width), random.randrange(0, grid_height)
+    for i in range(max_attempts):
+        x, y = (random.randint(0, grid_height), random.randint(0, grid_width))
+
         if (
                 within_bounds(grid_width, grid_height, (x, y))
                 and not contains_any_resource(
@@ -494,6 +408,7 @@ def generate_valid_agent_position(grid, grid_width, grid_height, max_attempts=35
 
 
 def populate_blocked_areas(
+        grid,
         num_squares,
         num_circles,
         min_width_blocked,
@@ -501,36 +416,36 @@ def populate_blocked_areas(
         min_height_blocked,
         max_height_blocked,
         ray,
-        grid,
         grid_width,
         grid_height,
         dim_tassel,
 ):
-    """
-    Populate the grid with blocked areas.
-    """
     blocked_tassels = []
     max_size = 0
 
     for _ in range(num_squares):
         pos = generate_valid_agent_position(grid, grid_width, grid_height)
         if pos:
-            blocked_tassels = add_squared_area(pos[0], pos[1], min_width_blocked, max_height_blocked, max_width_blocked,
-                                               min_height_blocked, grid, grid_width, grid_height, dim_tassel)
-            if len(blocked_tassels) > max_size:
-                max_size = blocked_tassels
-
-    for _ in range(num_circles):
-        pos = generate_valid_agent_position(grid, grid_width, grid_height)
-        if pos:
-            fill_circular_blocked_area(
+            blocked_tassels = add_squared_area(
                 pos[0],
                 pos[1],
-                ray,
+                min_width_blocked,
+                max_height_blocked,
+                max_width_blocked,
+                min_height_blocked,
                 grid,
                 grid_width,
                 grid_height,
                 dim_tassel,
+            )
+            if len(blocked_tassels) > max_size:
+                max_size = len(blocked_tassels)
+
+    for j in range(num_circles):
+        pos = generate_valid_agent_position(grid, grid_width, grid_height)
+        if pos:
+            fill_circular_blocked_area(
+                pos[0], pos[1], ray, grid, grid_width, grid_height, dim_tassel
             )
 
     if len(blocked_tassels) > 0:
@@ -564,13 +479,20 @@ class DefaultRandomGrid(RandomGrid):
             dim_tassel,
     ):
         super().__init__(width, length)
-        self._isolated_width = isolated_area_min_width + random.randint(
-            0, calculate_variance(isolated_area_min_width, isolated_area_max_width)
-        )
-        self._isolated_length = isolated_area_min_length + random.randint(
-            0, calculate_variance(isolated_area_min_length, isolated_area_max_length)
-        )
-        self._ray = min_ray + random.randint(0, calculate_variance(min_ray, max_ray))
+        self._isolated_width = (
+                                       isolated_area_min_width
+                                       + random.randint(
+                                   0, calculate_variance(isolated_area_min_width, isolated_area_max_width)
+                               )
+                               ) / dim_tassel
+        self._isolated_length = (
+                                        isolated_area_min_length
+                                        + random.randint(
+                                    0,
+                                    calculate_variance(isolated_area_min_length, isolated_area_max_length),
+                                )
+                                ) / dim_tassel
+        self._ray = min_ray + (calculate_variance(min_ray, max_ray))
 
         self._isolated_shape = isolated_shape
         self._min_height_blocked = min_height_square
@@ -578,9 +500,9 @@ class DefaultRandomGrid(RandomGrid):
 
         self._min_width_blocked = min_width_square
         self._max_width_blocked = max_width_square
-        self._radius = min_radius + random.randint(
-            0, calculate_variance(min_radius, max_radius)
-        )
+        self._radius = (
+                               min_radius + random.randint(0, calculate_variance(min_radius, max_radius))
+                       ) / dim_tassel
 
         self._num_blocked_squares = num_blocked_squares
         self._num_blocked_circles = num_blocked_circles
@@ -588,7 +510,6 @@ class DefaultRandomGrid(RandomGrid):
 
         self._grid = MultiGrid(length, width, torus=False)
 
-    # @profile
     def begin(self):
         random_corner = initialize_isolated_area(
             self._grid,
@@ -601,9 +522,9 @@ class DefaultRandomGrid(RandomGrid):
         )
 
         blocked_tassels = populate_blocked_areas(
+            self._grid,
             self._num_blocked_squares,
             self._num_blocked_circles,
-            self._grid,
             self._min_width_blocked,
             self._max_width_blocked,
             self._min_height_blocked,
@@ -628,19 +549,8 @@ def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height, dim_tas
                 grid_width,
                 grid_height,
             )
-        neighbors = []
-        for tassel in tassels:
-            if within_bounds(grid_width, grid_height, tassel):
-                for nb in grid.get_neighborhood(tassel, moore=True, include_center=False):
-                    if nb not in tassels and not is_near_opening(
-                            grid, tassel, grid_width, grid_height
-                    ):
-                        neighbors.append((nb[0], nb[1]))
-
-        for neighbor in neighbors:
-            set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
-
-        find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
+        for t in tassels:
+            aux_lines(t, grid, grid_width, grid_height, dim_tassel)
     elif t == "squares":
         for tassel in tassels:
             add_resource(
@@ -651,19 +561,8 @@ def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height, dim_tas
                 grid_width,
                 grid_height,
             )
-        neighbors = set()
-        for tassel in tassels:
-            if within_bounds(grid_width, grid_height, tassel):
-                for nb in grid.get_neighborhood(tassel, moore=True, include_center=False):
-                    if nb not in tassels and not is_near_opening(
-                            grid, tassel, grid_width, grid_height
-                    ):
-                        neighbors.add((nb[0], nb[1]))
-
-        for neighbor in neighbors:
-            set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
-
-        find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
+        for t in tassels:
+            aux_lines(t, grid, grid_width, grid_height, dim_tassel)
     elif t == "is_area":
         for tassel in tassels:
             add_resource(
@@ -704,10 +603,9 @@ class DefaultCreatedGrid(RandomGrid):
         """
         Begin populating the grid based on raw shape data.
         """
-        print(f"----- GRID WIDTH: {self.grid_width}")
         circles = self.data_e["circles"]
         circles_rounded = set()
-        squares_rounded = set()
+        squares_rounded = []
         t = None
 
         if circles:
@@ -716,7 +614,15 @@ class DefaultCreatedGrid(RandomGrid):
 
                 x, y = (int(t[0]), int(t[1]))
                 circles_rounded.add((x, y))
-            add_area(self.grid, "circles", circles_rounded, [], self.grid_width, self.grid_height, self.dim_tassel)
+            add_area(
+                self.grid,
+                "circles",
+                circles_rounded,
+                [],
+                self.grid_width,
+                self.grid_height,
+                self.dim_tassel,
+            )
 
         squares = self.data_e["squares"]
 
@@ -727,19 +633,28 @@ class DefaultCreatedGrid(RandomGrid):
                     int(t[0]),
                     int(t[1]),
                 )
-                squares_rounded.add((x, y))
-            add_area(self.grid, "squares", squares_rounded, [], self.grid_width, self.grid_height, self.dim_tassel)
+                squares_rounded.append((x, y))
+            add_area(
+                self.grid,
+                "squares",
+                squares_rounded,
+                [],
+                self.grid_width,
+                self.grid_height,
+                self.dim_tassel,
+            )
 
         opening = self.data_e["opening"]
         isolated_area = self.data_e["isolated_area"]
         if opening and isolated_area:
             opening_rounded = []
-            # for tassel in opening:
-            x, y = (
-                math.ceil(opening[0]),
-                math.ceil(opening[1]),
-            )
-            opening_rounded.append((x, y))
+            for t in opening:
+                # for tassel in opening:
+                x, y = (
+                    math.ceil(t[0]),
+                    math.ceil(t[1]),
+                )
+                opening_rounded.append((x, y))
 
             isolated_area_rounded = set()
             for tassel in isolated_area:
@@ -748,8 +663,15 @@ class DefaultCreatedGrid(RandomGrid):
                     math.ceil(tassel[1]),
                 )
                 isolated_area_rounded.add((x, y))
-            add_area(self.grid, "is_area", isolated_area_rounded, opening_rounded, self.grid_width, self.grid_height,
-                     self.dim_tassel)
+            add_area(
+                self.grid,
+                "is_area",
+                isolated_area_rounded,
+                opening_rounded,
+                self.grid_width,
+                self.grid_height,
+                self.dim_tassel,
+            )
             self.random_corner = random.choice(opening)
             t = (
                 math.ceil(self.random_corner[0]),
