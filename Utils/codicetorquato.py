@@ -48,12 +48,10 @@ def move_backward(
 ) -> Tuple[int, int]:
     new_x = pos[0] + direction[0]
     new_y = pos[1] + direction[1]
-    print(f"PREV POS: {pos} -- NEW POS: {new_x, new_y}")
 
     while not within_bounds(grid_width, grid_height, (new_x, new_y)):  # todo
         new_x = pos[0] + direction[0]
         new_y = pos[1] + direction[1]
-        print(f"PREV POS: {pos} -- NEW POS: {new_x, new_y}")
 
     return new_x, new_y
 

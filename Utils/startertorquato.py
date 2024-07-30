@@ -1,5 +1,4 @@
-"""#todo: devi restaurare questo codice, perche' la dimensione della griglia varia se creata o random,
-
+"""
 def create_environment(
     data_e,
     dim_tassel,
