@@ -9,8 +9,7 @@ from Model.agents import (
     CircledBlockedArea,
     IsolatedArea,
     Opening,
-    GuideLine,
-    BaseStation,
+    GuideLine
 )
 from Utils.utils import (
     set_guideline_cell,
@@ -31,7 +30,6 @@ def build_squared_isolated_area(
         grid_width,
         grid_height,
 ):
-
     enclosure_tassels = []
 
     def create_resources(x_range, y_range):
@@ -40,28 +38,30 @@ def build_squared_isolated_area(
             for y in y_range:
                 new_resource = IsolatedArea((x, y))
                 res = add_resource(grid, new_resource, x, y, grid_width, grid_height)
-                if res:
-                    # isolated_area_tassels.append((x, y))
-                    # print("isolated area: ", (x, y))
-
-                    # Check if the tassel is on the boundary of the isolated area
-                    if (
-                        (x == x_start or x == x_start + isolated_area_width - 1)
-                        and y_start <= y < y_start + isolated_area_length
-                    ) or (
-                        (y == y_start or y == y_start + isolated_area_length - 1)
-                        and x_start <= x < x_start + isolated_area_width
-                    ):
-                        enclosure_tassels.append((x, y))
-                    else:
+                if res and x != 0 \
+                        and (y != 0
+                             and x != grid_height
+                             and y != grid_width):
+                    enclosure_tassels.append((x, y))
+                    """and (x, y) != (0, y_start)
+                                                and (x, y) != (x_start, 0) 
+                                                and (x, y) != (x_start, y_start):
                         if (
-                            (x == x_start or x == x_start - isolated_area_width + 1)
-                            and y >= y_start - isolated_area_length + 1
+                                (x == x_start or x == x_start + isolated_area_width - 1) and
+                                (y_start <= y < y_start + isolated_area_length)
                         ) or (
-                            (y == y_start or y == y_start - isolated_area_length + 1)
-                            and x >= x_start - isolated_area_width + 1
+                                (y == y_start or y == y_start + isolated_area_length - 1) and
+                                (x_start <= x < x_start + isolated_area_width)
                         ):
                             enclosure_tassels.append((x, y))
+                            print("isolated area: ", (x, y))
+    
+                        if (
+                                (x == x_start or x == x_start - isolated_area_width + 1) and
+                                (y == y_start or y == y_start - isolated_area_length + 1)
+                        ):
+                            enclosure_tassels.append((x, y))
+                            print("isolated area: ", (x, y))"""
 
     if x_start == 0:
         if y_start == 0:
@@ -69,6 +69,7 @@ def build_squared_isolated_area(
                 range(x_start, x_start + isolated_area_width),
                 range(y_start, y_start + isolated_area_length),
             )
+
         else:
             create_resources(
                 range(x_start, x_start + isolated_area_width),
@@ -85,41 +86,25 @@ def build_squared_isolated_area(
             range(y_start - isolated_area_length, y_start),
         )
 
+    e_tassel = []
     # Remove points in the corners from enclosure_tassels
-    removal_points = [
-        (0, 0),
-        (0, y_start),
-        (x_start, 0),
-        (x_start, y_start),
-    ]
-    for point in removal_points:
-        if point in enclosure_tassels:
-            enclosure_tassels.remove(point)
+    for point in enclosure_tassels:
+        for neighbor in grid.get_neighborhood(point, grid_width, grid_height):
+            if neighbor not in enclosure_tassels and dim_opening > 0:
+                e_tassel.append(point)
+                dim_opening -= 1
 
-    if not enclosure_tassels:
+    if not e_tassel:
         return
 
-    opening = random.choice(enclosure_tassels)
-    opening_x, opening_y = opening
-
-    opening_index = enclosure_tassels.index(opening)
-    aux_opening = []
-
-    while dim_opening > 0:
+    for opening in e_tassel:
         opening_new = Opening(opening)
-        # print("OPENING: ", opening)
-        aux_opening.append(opening)
+
         result = add_resource(
-            grid, opening_new, opening_x, opening_y, grid_width, grid_height
+            grid, opening_new, opening[0], opening[1], grid_width, grid_height
         )
 
-        if result:
-            dim_opening -= 1
-
-            opening_index = (opening_index + 1) % len(enclosure_tassels)
-            opening = enclosure_tassels[opening_index]
-
-    return random.choice(aux_opening)
+    return random.choice(e_tassel)
 
 
 def circular_isolation(
@@ -207,7 +192,7 @@ def calculate_variance(value1, value2):
     return int(sum_of_squares / 2)
 
 
-def find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel):
+def find_and_draw_lines(grid, neighbors, grid_width, grid_height):
     """
     Find and draw lines connecting neighboring cells to the perimeter.
     """
@@ -215,9 +200,9 @@ def find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel):
     def find_perimeter_cells(width, height):
         return [
             (x, y)
-            for x in range(width)
-            for y in range(height)
-            if x in {0, width - 1} or y in {0, height - 1}
+            for x in range(height)
+            for y in range(width)
+            if x in {0, height} or y in {0, width}
         ]
 
     def neighbor_on_the_perimeter(n, perimeter_cells):
@@ -243,8 +228,8 @@ def find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel):
                 nearest_perimeter[0],
                 nearest_perimeter[1],
                 grid,
+                grid_width,
                 grid_height,
-                dim_tassel,
             )
 
 
@@ -307,8 +292,8 @@ def add_squared_area(
             if (
                     within_bounds(grid_width, grid_height, (tassel_x, tassel_y))
                     and not is_near_opening(
-                    grid, (tassel_x, tassel_y), grid_width, grid_height
-                )
+                grid, (tassel_x, tassel_y), grid_width, grid_height
+            )
                     and (tassel_x, tassel_y) not in resources
             ):
                 add_resource(
@@ -333,7 +318,7 @@ def add_squared_area(
     for neighbor in neighbors:
         set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
 
-    find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
+    find_and_draw_lines(grid, neighbors, grid_width, grid_height)
 
     return blocked_area
 
@@ -367,7 +352,7 @@ def aux_lines(blocked_area, grid, grid_width, grid_height, dim_tassel):
     for neighbor in neighbors:
         set_guideline_cell(neighbor[0], neighbor[1], grid, grid_width, grid_height)
 
-    find_and_draw_lines(grid, neighbors, grid_width, grid_height, dim_tassel)
+    find_and_draw_lines(grid, neighbors, grid_width, grid_height)
 
 
 def is_near_opening(grid, point, grid_width, grid_height):
@@ -479,19 +464,30 @@ class DefaultRandomGrid(RandomGrid):
             dim_tassel,
     ):
         super().__init__(width, length)
-        self._isolated_width = (
-                                       isolated_area_min_width
-                                       + random.randint(
-                                   0, calculate_variance(isolated_area_min_width, isolated_area_max_width)
-                               )
-                               ) / dim_tassel
-        self._isolated_length = (
-                                        isolated_area_min_length
-                                        + random.randint(
-                                    0,
-                                    calculate_variance(isolated_area_min_length, isolated_area_max_length),
-                                )
-                                ) / dim_tassel
+        self._isolated_width = int(
+            (
+                    isolated_area_min_width
+                    + random.randint(
+                0,
+                calculate_variance(
+                    isolated_area_min_width, isolated_area_max_width
+                ),
+            )
+            )
+            / dim_tassel
+        )
+        self._isolated_length = int(
+            (
+                    isolated_area_min_length
+                    + random.randint(
+                0,
+                calculate_variance(
+                    isolated_area_min_length, isolated_area_max_length
+                ),
+            )
+            )
+            / dim_tassel
+        )
         self._ray = min_ray + (calculate_variance(min_ray, max_ray))
 
         self._isolated_shape = isolated_shape
@@ -500,15 +496,16 @@ class DefaultRandomGrid(RandomGrid):
 
         self._min_width_blocked = min_width_square
         self._max_width_blocked = max_width_square
-        self._radius = (
-                               min_radius + random.randint(0, calculate_variance(min_radius, max_radius))
-                       ) / dim_tassel
+        self._radius = int(
+            (min_radius + random.randint(0, calculate_variance(min_radius, max_radius)))
+            / dim_tassel
+        )
 
         self._num_blocked_squares = num_blocked_squares
         self._num_blocked_circles = num_blocked_circles
         self._dim_tassel = dim_tassel
 
-        self._grid = MultiGrid(length, width, torus=False)
+        self._grid = MultiGrid(width, length, torus=False)
 
     def begin(self):
         random_corner = initialize_isolated_area(
@@ -592,7 +589,7 @@ class DefaultCreatedGrid(RandomGrid):
     def __init__(self, grid_width, grid_height, data_e, raw_shapes, dim_tassel):
         super().__init__(grid_width, grid_height)
         self.data_e = data_e
-        self.grid = MultiGrid(grid_height, grid_width, torus=False)
+        self.grid = MultiGrid(grid_width, grid_height, torus=False)
         self.random_corner = (-1, -1)
         self.grid_width = grid_width
         self.grid_height = grid_height

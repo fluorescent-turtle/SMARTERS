@@ -28,12 +28,10 @@ class Simulator(mesa.Model):
             cycle_data,
             filename,
             dim_tassel,
-            created,
     ):
         """
         Initialize the simulator for the grass cutting simulation.
 
-        :param created:
         :param grid: The simulation grid.
         :param cycles: Number of cycles to run the simulation.
         :param base_station_pos: The position of the base station.
@@ -88,17 +86,8 @@ class Simulator(mesa.Model):
         :param base_station_pos: The position of the base station where the robot starts.
         """
         # Create the robot with all necessary attributes
-        self.robot = Robot(
-            len(self.grass_tassels) + 1,
-            self,
-            robot_plugin,
-            self.grass_tassels,
-            autonomy,
-            self.speed,
-            2,
-            base_station_pos,
-            0,
-        )
+        self.robot = Robot(len(self.grass_tassels) + 1, self, robot_plugin, self.grass_tassels, autonomy, self.speed, 2,
+                           base_station_pos)
         # Place the robot at the base station and add it to the schedule
         self.grid.place_agent(self.robot, self.base_station_pos)
         self.schedule.add(self.robot)
@@ -108,15 +97,21 @@ class Simulator(mesa.Model):
         self.schedule.step()  # Progress the simulation schedule by one step
         cycle = 0
 
-        # Main simulation loop
-        while self.cycles > 0:
-            while self.robot.get_autonomy() > 0:
-                self.robot.step()  # Move the robot until it runs out of autonomy
-            self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
-            self.cycles -= self.robot.get_autonomy()  # Decrease the remaining cycles
-            cycle += 1
-            self._process_cycle_data(cycle)  # Process the data for the current cycle
-
+        if self.cycles >= self.robot.get_autonomy():
+            # Main simulation loop
+            while self.cycles > 0:
+                while self.robot.get_autonomy() > 0:
+                    self.robot.step()  # Move the robot until it runs out of autonomy
+                self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
+                self.cycles -= self.robot.get_autonomy()  # Decrease the remaining cycles
+                cycle += 1
+                self._process_cycle_data(cycle)  # Process the data for the current cycle
+        else:
+            while self.cycles > 0:
+                print(f"SELFCYCLES {self.cycles} --- {self.robot.autonomy - self.robot.get_autonomy()}")
+                self.robot.step()
+                self.cycles -= (self.robot.autonomy - self.robot.get_autonomy())
+            self._process_cycle_data(cycle)
         self.running = False  # Mark the simulation as not running
 
     def _process_cycle_data(self, cycle):
@@ -129,7 +124,6 @@ class Simulator(mesa.Model):
 
         for grass_tassel in self.grass_tassels:
             x, y = grass_tassel.get()
-            # x, y = int(x*self.dim_tassel), int(y*self.dim_tassel)
             counts[x][y] = grass_tassel.get_counts()
 
         # Create a DataFrame to store the counts
@@ -162,6 +156,7 @@ class Simulator(mesa.Model):
         # Create a heatmap of the counts
         fig, ax = plt.subplots()
         ax.xaxis.tick_top()  # Place x-axis ticks at the top
+        maximum = max(max(sublist) for sublist in counts)
 
         sns.heatmap(
             data=counts,
@@ -169,7 +164,8 @@ class Simulator(mesa.Model):
             cmap="BuGn",
             cbar_kws={"label": "Counts"},
             robust=True,
-            vmin=-1,
+            vmin=0,
+            vmax=maximum,
             ax=ax,
             xticklabels=reduced_xtick,
             yticklabels=reduced_ytick,

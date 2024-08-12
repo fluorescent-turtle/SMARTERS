@@ -375,9 +375,11 @@ def draw_line(x1, y1, x2, y2, grid, grid_width, grid_height):
     cells_to_add = set()
     err = dx - dy
 
-    while (x, y) != (x2, y2) and within_bounds(grid_width, grid_height, (x, y)):
-        curr_cell = grid[x][y]
-        if curr_cell is not None and not contains_any_resource(
+    while (x, y) != (x2, y2):
+        if within_bounds(grid_width, grid_height, (x, y)):
+
+            curr_cell = grid[x][y]
+            if curr_cell is not None and not contains_any_resource(
                 grid,
                 (x, y),
                 [
@@ -385,30 +387,27 @@ def draw_line(x1, y1, x2, y2, grid, grid_width, grid_height):
                     SquaredBlockedArea,
                     IsolatedArea,
                     BaseStation,
+                    GuideLine,
                 ],
                 grid_width,
                 grid_height,
-        ):
-            possible_dirs = [(sx, sy), (sx, -sy), (-sx, sy), (-sx, -sy)]
-            dir_idx = random.randint(0, 1)
-            new_dir = possible_dirs[dir_idx]
-            sx_, sy_ = new_dir
+            ):
+                cells_to_add.add((x, y))
+                add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
 
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x += sx
+            if e2 < dx:
+                err += dx
+                y += sy
         else:
-            sx_, sy_ = sx, sy
+            break
 
-        cells_to_add.add((x, y))
-        add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
-
-        e2 = 2 * err
-        if e2 > -dy:
-            err -= dy
-            x += sx_
-        if e2 < dx:
-            err += dx
-            y += sy_
-
-    cells_to_add.add((x2, y2))
+    if within_bounds(grid_width, grid_height, (x2, y2)):
+        cells_to_add.add((x2, y2))
+        add_resource(grid, GuideLine((x2, y2)), x2, y2, grid_width, grid_height)
 
     return cells_to_add
 
@@ -417,7 +416,7 @@ def contains_resource(grid, cell, resource, grid_width, grid_height):
     x, y = cell
 
     # Add these checks to ensure x and y are within bounds
-    if 0 <= x < grid_height and 0 <= y < grid_width:
+    if 0 <= x < grid_width and 0 <= y < grid_height:
 
         cell_contents = grid.get_cell_list_contents(cell)
 
@@ -474,7 +473,7 @@ def add_resource(grid, resource, x, y, grid_width, grid_height):
 
 
 def within_bounds(grid_width, grid_height, pos):
-    return 0 <= pos[0] < grid_height and 0 <= pos[1] < grid_width
+    return 0 <= pos[0] < grid_width and 0 <= pos[1] < grid_height
 
 
 def find_farthest_point(grid_width, grid_height, fx, fy):

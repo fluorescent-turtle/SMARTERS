@@ -22,21 +22,19 @@ class Robot(Agent):
             speed,
             shear_load,
             base_station,
-            param_autonomy,
     ):
         super().__init__(unique_id, model)
 
         self.robot_plugin = robot_plugin  # Plugin used for movement
         self.grass_tassels = grass_tassels  # Number of grass tassels to collect
-        self.autonomy = autonomy * 3600  # Autonomy level of the robot
+        self.autonomy = autonomy  # Autonomy level of the robot
 
         self.base_station = base_station
         self.speed = speed  # Speed of the robot
         self.shear_load = shear_load
 
         self.visited_positions = []
-        self.param_autonomy = int(param_autonomy)
-        self.aux_autonomy = self.autonomy
+        self.aux_autonomy = autonomy
 
         self.first = True
         self.dir = None

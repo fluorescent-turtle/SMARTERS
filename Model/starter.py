@@ -155,22 +155,27 @@ def process_grid_data(
         grid (MultiGrid): The grid to process.
 
     """
-    external_data = [["Empty" for _ in range(grid_width)] for _ in range(grid_height)]
-    for x in range(grid_height):
-        for y in range(grid_width):
+
+
+"""
+    external_data = [["" for x in range(grid_height)] for y in range(grid_width)]
+
+    for x in range(grid_width):
+        for y in range(grid_height):
+            #print(f"x:y {x,y} -- grid width: {grid_width} -- grid height: {grid_height} -- range: {range(grid_width)} --- {range(grid_height)}")
             external_data[x][y] = grid.get_cell_list_contents([(x, y)])
 
     output_dir = os.path.abspath("./View/")
     path = os.path.join(output_dir, filename)
     df = pd.DataFrame(external_data)
     df = df.rename(
-        columns={col_index: col_index * dim_tassel for col_index in range(grid_width)}
+        columns={col_index: col_index * dim_tassel for col_index in range(grid_height)}
     )
     df.insert(loc=0, column="num_mappa", value=map_index)
     df.insert(loc=1, column="ripetizione", value=repetition_index)
-    df.insert(loc=2, column="x", value=[dim_tassel * i for i in range(grid_height)])
+    df.insert(loc=2, column="x", value=[dim_tassel * i for i in range(grid_width)])
 
-    df.to_csv(path, index=False)
+    df.to_csv(path, index=False)"""
 
 
 def get_current_datetime():
@@ -221,20 +226,8 @@ def runner(
     process_grid_data(grid_height, grid_width, i, j, filename, dim_tassel, grid)
 
     current_data = []
-    Simulator(
-        grid,
-        cycles,
-        base_station_pos,
-        plugin,
-        data_r["speed"],
-        data_r["autonomy"] - (data_r["autonomy"] / 10),
-        i,
-        j,
-        current_data,
-        filename,
-        dim_tassel,
-        created,
-    ).step()
+    Simulator(grid, cycles, base_station_pos, plugin, data_r["speed"],
+              (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60, i, j, current_data, filename, dim_tassel).step()
     cycle_data.append(current_data)
 
 
@@ -251,7 +244,7 @@ def run_model_with_parameters(env_plugins, robot_plugin):
     repetitions = data_s["repetitions"]
     num_maps = data_s["num_maps"]
 
-    cycles = data_s["cycle"] * 3600
+    cycles = data_s["cycle"] * 60
     dim_tassel = data_s["dim_tassel"]
     created = False
     grid_width = math.ceil(data_e["width"] / dim_tassel)
@@ -263,7 +256,7 @@ def run_model_with_parameters(env_plugins, robot_plugin):
 
     for i in range(num_maps):
         cycle_data = []
-        if (data_e.get("circles")) and not created:
+        if (data_e.get("circles") is not None) and not created:
             grid, random_corner, biggest_area_blocked = create_grid(
                 "default", data_e, grid_width, grid_height, dim_tassel, env_plugins
             )

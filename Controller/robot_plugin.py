@@ -33,14 +33,16 @@ def pass_on_neighbors(pos, grid, diameter, grass_tassels, agent, dim_tassel):
     radius = math.ceil(
         (diameter / dim_tassel) / 2
     )  # Calculate the radius for neighbor search
-    neighbors = grid.get_neighbors(
+    neighbors = grid.get_neighborhood(
         pos, moore=False, include_center=True, radius=radius
     )  # Get neighboring positions
 
     for neighbor in neighbors:  # Iterate over each neighbor
-        pass_on_current_tassel(
-            grass_tassels, neighbor, agent, diameter
-        )  # Pass on the current tassel to the neighbor
+        print(f"neighbor: {neighbor} --- {neighbors}")
+        if within_bounds(grid.width, grid.height, neighbor):
+            pass_on_current_tassel(
+                grass_tassels, neighbor, agent, diameter
+            )  # Pass on the current tassel to the neighbor
 
 
 def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter):
