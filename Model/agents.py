@@ -6,10 +6,21 @@ class Robot(Agent):
     A Robot agent that interacts with the environment.
 
     :param unique_id: Unique identifier for the agent.
-    :param model: The model object.
+    :type unique_id: int
+    :param model: The model object that the agent belongs to.
+    :type model: Model
     :param robot_plugin: The robot plugin used for movement.
+    :type robot_plugin: MovementPlugin
     :param grass_tassels: Number of grass tassels to collect.
+    :type grass_tassels: int
     :param autonomy: Autonomy level of the robot.
+    :type autonomy: int
+    :param speed: Speed of the robot.
+    :type speed: float
+    :param shear_load: The shear load capacity of the robot.
+    :type shear_load: float
+    :param base_station: The base station object where the robot can recharge.
+    :type base_station: BaseStation
     """
 
     def __init__(
@@ -50,6 +61,12 @@ class Robot(Agent):
         self.robot_plugin.move(self)
 
     def get_gt(self):
+        """
+        Get the number of grass tassels to collect.
+
+        :return: Number of grass tassels.
+        :rtype: int
+        """
         return self.grass_tassels
 
     def decrease_autonomy(self, param):
@@ -57,24 +74,41 @@ class Robot(Agent):
         Decrease the autonomy level of the robot.
 
         :param param: Amount to decrease the autonomy.
+        :type param: int
         """
-
         self.aux_autonomy -= param
 
     def get_autonomy(self):
+        """
+        Get the current autonomy level of the robot.
+
+        :return: Current autonomy level.
+        :rtype: int
+        """
         return self.aux_autonomy
 
     def reset_autonomy(self):
+        """
+        Reset the autonomy level of the robot to its initial value.
+        """
         self.aux_autonomy = self.autonomy
 
     def not_first(self):
+        """
+        Indicate that this is not the first step.
+        """
         self.first = False
 
     def get_first(self):
+        """
+        Check if this is the first step.
+
+        :return: True if it is the first step, False otherwise.
+        :rtype: bool
+        """
         return self.first
 
 
-# todo: grass tassel in plugin
 class GrassTassel:
     """
     A GrassTassel agent that represents a single grass tassel.
@@ -100,6 +134,7 @@ class GrassTassel:
         Get the number of times the grass tassel has been cut.
 
         :return: Cut count.
+        :rtype: int
         """
         return self.cut
 
@@ -108,10 +143,14 @@ class GrassTassel:
         Get the position of the grass tassel.
 
         :return: Position of the grass tassel.
+        :rtype: tuple or list
         """
         return self.pos
 
     def clear(self):
+        """
+        Clear the position of the grass tassel.
+        """
         self.pos = None
 
 
@@ -120,6 +159,7 @@ class IsolatedArea:
     Represents an isolated area.
 
     :param pos: Position of the isolated area.
+    :type pos: tuple or list
     """
 
     def __init__(self, pos):
@@ -130,6 +170,7 @@ class IsolatedArea:
         Get the position of the isolated area.
 
         :return: Position of the isolated area.
+        :rtype: tuple or list
         """
         return self.pos
 
@@ -139,6 +180,7 @@ class Opening:
     Represents an opening in the environment.
 
     :param pos: Position of the opening.
+    :type pos: tuple or list
     """
 
     def __init__(self, pos):
@@ -149,6 +191,7 @@ class Opening:
         Get the position of the opening.
 
         :return: Position of the opening.
+        :rtype: tuple or list
         """
         return self.pos
 
@@ -168,10 +211,14 @@ class BaseStation:
         Get the position of the base station.
 
         :return: Position of the base station.
+        :rtype: tuple or list
         """
         return self.pos
 
     def clear(self):
+        """
+        Clear the position of the base station.
+        """
         self.pos = None
 
 
@@ -180,6 +227,7 @@ class SquaredBlockedArea:
     Represents a squared blocked area.
 
     :param pos: Position of the blocked area.
+    :type pos: tuple or list
     """
 
     def __init__(self, pos):
@@ -190,6 +238,7 @@ class SquaredBlockedArea:
         Get the position of the blocked area.
 
         :return: Position of the blocked area.
+        :rtype: tuple or list
         """
         return self.pos
 
@@ -199,6 +248,7 @@ class CircledBlockedArea:
     Represents a circular blocked area.
 
     :param pos: Center position of the circle.
+    :type pos: tuple or list
     """
 
     def __init__(self, pos):
@@ -220,8 +270,12 @@ class GuideLine:
         Get the position of the guideline.
 
         :return: Position of the guideline.
+        :rtype: tuple or list
         """
         return self.pos
 
     def clear(self):
+        """
+        Clear the position of the guideline.
+        """
         self.pos = None

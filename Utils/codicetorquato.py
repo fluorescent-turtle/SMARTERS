@@ -122,7 +122,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                                     agent.speed,
                                     agent.get_autonomy(),
                                     self.cut_diameter,
-                                    1,
+                                    (self.dim_tassel * self.dim_tassel),
                                 )
                                 agent.decrease_autonomy(mowing_t)
                         else:
@@ -183,7 +183,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                     agent.speed,
                     agent.get_autonomy(),
                     self.cut_diameter,
-                    1,
+                    (self.dim_tassel * self.dim_tassel),
                 )
                 agent.decrease_autonomy(mowing_t)
 
@@ -211,7 +211,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                                 agent.speed,
                                 agent.get_autonomy(),
                                 self.cut_diameter,
-                                1,
+                                (self.dim_tassel * self.dim_tassel),
                             )
                             agent.decrease_autonomy(mowing_t)
                         valid_moves.append(neighbor)
@@ -315,7 +315,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                         agent.speed,
                         agent.get_autonomy(),
                         self.cut_diameter,
-                        1,
+                        (self.dim_tassel * self.dim_tassel),
                     )
                     agent.decrease_autonomy(mowing_t)
                 return new_pos
@@ -362,7 +362,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                 agent.speed,
                 agent.get_autonomy(),
                 self.cut_diameter,
-                1,
+                (self.dim_tassel * self.dim_tassel),
             )
             agent.decrease_autonomy(mowing_t)
 
@@ -394,7 +394,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                         agent.speed,
                         agent.get_autonomy(),
                         self.cut_diameter,
-                        1,
+                        (self.dim_tassel * self.dim_tassel),
                     )
                     agent.decrease_autonomy(mowing_t)
                 p = random_pos

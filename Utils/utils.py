@@ -206,26 +206,18 @@ class BiggestCenterPairStrategy(StationGuidelinesStrategy):
 
 
 def mowing_time(speed_robot, autonomy_robot_seconds, cutting_diameter, total_area):
-    # Calculate the area covered per pass
-    # cutting_area = math.pi * (cutting_diameter / 2) ** 2
+    cutting_width = cutting_diameter
 
-    # Calculate the number of passes required to cover the total area
-    # passes_needed = math.ceil(total_area / cutting_area)
+    passes_needed = math.ceil(total_area / cutting_width)
 
-    # Calculate the total distance covered (assuming an optimized path)
-    # total_distance = passes_needed * cutting_area / (math.pi * cutting_diameter)
+    total_distance = passes_needed * total_area / cutting_width
 
-    # Calculate the total time required
-    total_time_minutes = total_area / speed_robot
-    # total_distance / speed_robot
+    total_time_seconds = total_distance / speed_robot
 
-    # Convert total time from minutes to seconds
-    total_time_seconds = total_time_minutes * 60
-    # print(f"AUTONOMY: {autonomy_robot_seconds} ======== TOTAL TIME: {total_time_seconds}")
-    # Check if the autonomy is sufficient to complete the job
+    # print(f"AUTONOMY: {autonomy_robot_seconds} ======== TOTAL TIME: {total_time_seconds} ==== speed: {speed_robot}")
+
     if total_time_seconds > autonomy_robot_seconds:
         print(f"Warning: The robot's autonomy might not be sufficient.")
-        pass
 
     return total_time_seconds
 

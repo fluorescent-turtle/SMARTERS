@@ -37,15 +37,14 @@ def pass_on_neighbors(pos, grid, diameter, grass_tassels, agent, dim_tassel):
         pos, moore=False, include_center=True, radius=radius
     )  # Get neighboring positions
 
-    for neighbor in neighbors:  # Iterate over each neighbor
-        print(f"neighbor: {neighbor} --- {neighbors}")
+    for neighbor in neighbors:
         if within_bounds(grid.width, grid.height, neighbor):
             pass_on_current_tassel(
-                grass_tassels, neighbor, agent, diameter
+                grass_tassels, neighbor, agent, diameter, dim_tassel
             )  # Pass on the current tassel to the neighbor
 
 
-def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter):
+def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tassel):
     """
     Increments the grass tassel at the new position and updates the agent's autonomy and path taken.
 
@@ -54,6 +53,7 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter):
         new_pos (tuple): The new position.
         agent: The agent performing the action.
         cut_diameter (float): The cutting diameter of the mower.
+        dim_tassel:
     """
     grass_tassel = get_grass_tassel(
         grass_tassels, new_pos
@@ -62,10 +62,7 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter):
         grass_tassel.increment()  # Increment the grass tassel
 
         mowing_t = mowing_time(  # Calculate the mowing time
-            agent.speed,
-            agent.get_autonomy(),
-            cut_diameter,
-            1,
+            agent.speed, agent.get_autonomy(), cut_diameter, (dim_tassel * dim_tassel)
         )
         agent.decrease_autonomy(mowing_t)  # Decrease the agent's autonomy
         agent.path_taken.add(new_pos)  # Add the new position to the agent's path taken
@@ -233,7 +230,11 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                         )  # Move the agent to the new position
 
                         pass_on_current_tassel(  # Increment the grass tassel at the new position
-                            grass_tassels, self.pos, agent, self.cut_diameter
+                            grass_tassels,
+                            self.pos,
+                            agent,
+                            self.cut_diameter,
+                            self.dim_tassel,
                         )
                         pass_on_neighbors(  # Increment the grass tassels of neighboring cells
                             self.pos,
@@ -285,7 +286,11 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                             agent, self.pos
                         )  # Move the agent to the new position
                         pass_on_current_tassel(  # Increment the grass tassel at the new position
-                            grass_tassels, self.pos, agent, self.cut_diameter
+                            grass_tassels,
+                            self.pos,
+                            agent,
+                            self.cut_diameter,
+                            self.dim_tassel,
                         )
                         pass_on_neighbors(  # Increment the grass tassels of neighboring cells
                             self.pos,
@@ -329,7 +334,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
             ):
                 self.pos = aux_pos
                 pass_on_current_tassel(
-                    grass_tassels, self.pos, agent, self.cut_diameter
+                    grass_tassels, self.pos, agent, self.cut_diameter, self.dim_tassel
                 )
                 pass_on_neighbors(
                     self.pos,

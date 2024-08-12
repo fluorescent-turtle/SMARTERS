@@ -9,7 +9,7 @@ from Model.agents import (
     CircledBlockedArea,
     IsolatedArea,
     Opening,
-    GuideLine
+    GuideLine,
 )
 from Utils.utils import (
     set_guideline_cell,
@@ -38,10 +38,7 @@ def build_squared_isolated_area(
             for y in y_range:
                 new_resource = IsolatedArea((x, y))
                 res = add_resource(grid, new_resource, x, y, grid_width, grid_height)
-                if res and x != 0 \
-                        and (y != 0
-                             and x != grid_height
-                             and y != grid_width):
+                if res and x != 0 and (y != 0 and x != grid_height and y != grid_width):
                     enclosure_tassels.append((x, y))
                     """and (x, y) != (0, y_start)
                                                 and (x, y) != (x_start, 0) 

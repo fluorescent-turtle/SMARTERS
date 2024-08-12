@@ -226,8 +226,19 @@ def runner(
     process_grid_data(grid_height, grid_width, i, j, filename, dim_tassel, grid)
 
     current_data = []
-    Simulator(grid, cycles, base_station_pos, plugin, data_r["speed"],
-              (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60, i, j, current_data, filename, dim_tassel).step()
+    Simulator(
+        grid,
+        cycles,
+        base_station_pos,
+        plugin,
+        data_r["speed"],
+        (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60,
+        i,
+        j,
+        current_data,
+        filename,
+        dim_tassel,
+    ).step()
     cycle_data.append(current_data)
 
 
