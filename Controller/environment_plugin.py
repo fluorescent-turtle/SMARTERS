@@ -1,3 +1,17 @@
+""" Copyright 2024 Sara Grecu
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License."""
+
 import math
 import random
 
@@ -40,25 +54,6 @@ def build_squared_isolated_area(
                 res = add_resource(grid, new_resource, x, y, grid_width, grid_height)
                 if res and x != 0 and (y != 0 and x != grid_height and y != grid_width):
                     enclosure_tassels.append((x, y))
-                    """and (x, y) != (0, y_start)
-                                                and (x, y) != (x_start, 0) 
-                                                and (x, y) != (x_start, y_start):
-                        if (
-                                (x == x_start or x == x_start + isolated_area_width - 1) and
-                                (y_start <= y < y_start + isolated_area_length)
-                        ) or (
-                                (y == y_start or y == y_start + isolated_area_length - 1) and
-                                (x_start <= x < x_start + isolated_area_width)
-                        ):
-                            enclosure_tassels.append((x, y))
-                            print("isolated area: ", (x, y))
-    
-                        if (
-                                (x == x_start or x == x_start - isolated_area_width + 1) and
-                                (y == y_start or y == y_start - isolated_area_length + 1)
-                        ):
-                            enclosure_tassels.append((x, y))
-                            print("isolated area: ", (x, y))"""
 
     if x_start == 0:
         if y_start == 0:
@@ -97,7 +92,7 @@ def build_squared_isolated_area(
     for opening in e_tassel:
         opening_new = Opening(opening)
 
-        result = add_resource(
+        add_resource(
             grid, opening_new, opening[0], opening[1], grid_width, grid_height
         )
 
@@ -260,7 +255,7 @@ def fill_circular_blocked_area(
                 blocked_tassels.append(point)
 
     for bt in blocked_tassels:
-        aux_lines(bt, grid, grid_width, grid_height, dim_tassel)
+        aux_lines(bt, grid, grid_width, grid_height)
 
 
 def add_squared_area(
@@ -320,7 +315,7 @@ def add_squared_area(
     return blocked_area
 
 
-def aux_lines(blocked_area, grid, grid_width, grid_height, dim_tassel):
+def aux_lines(blocked_area, grid, grid_width, grid_height):
     def get_circular_neighbors(cell):
         # Helper function to validate a single coordinate value
         def _valid_coordinate(h, max_val):
@@ -532,7 +527,7 @@ class DefaultRandomGrid(RandomGrid):
         return self._grid, random_corner, blocked_tassels
 
 
-def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height, dim_tassel):
+def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height):
     if t == "circles":
         for tassel in tassels:
             add_resource(
@@ -544,7 +539,7 @@ def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height, dim_tas
                 grid_height,
             )
         for t in tassels:
-            aux_lines(t, grid, grid_width, grid_height, dim_tassel)
+            aux_lines(t, grid, grid_width, grid_height)
     elif t == "squares":
         for tassel in tassels:
             add_resource(
@@ -556,7 +551,7 @@ def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height, dim_tas
                 grid_height,
             )
         for t in tassels:
-            aux_lines(t, grid, grid_width, grid_height, dim_tassel)
+            aux_lines(t, grid, grid_width, grid_height)
     elif t == "is_area":
         for tassel in tassels:
             add_resource(
@@ -608,15 +603,8 @@ class DefaultCreatedGrid(RandomGrid):
 
                 x, y = (int(t[0]), int(t[1]))
                 circles_rounded.add((x, y))
-            add_area(
-                self.grid,
-                "circles",
-                circles_rounded,
-                [],
-                self.grid_width,
-                self.grid_height,
-                self.dim_tassel,
-            )
+
+            add_area(self.grid, "circles", circles_rounded, [], self.grid_width, self.grid_height)
 
         squares = self.data_e["squares"]
 
@@ -628,15 +616,7 @@ class DefaultCreatedGrid(RandomGrid):
                     int(t[1]),
                 )
                 squares_rounded.append((x, y))
-            add_area(
-                self.grid,
-                "squares",
-                squares_rounded,
-                [],
-                self.grid_width,
-                self.grid_height,
-                self.dim_tassel,
-            )
+            add_area(self.grid, "squares", squares_rounded, [], self.grid_width, self.grid_height)
 
         opening = self.data_e["opening"]
         isolated_area = self.data_e["isolated_area"]
@@ -657,15 +637,7 @@ class DefaultCreatedGrid(RandomGrid):
                     math.ceil(tassel[1]),
                 )
                 isolated_area_rounded.add((x, y))
-            add_area(
-                self.grid,
-                "is_area",
-                isolated_area_rounded,
-                opening_rounded,
-                self.grid_width,
-                self.grid_height,
-                self.dim_tassel,
-            )
+            add_area(self.grid, "is_area", isolated_area_rounded, opening_rounded, self.grid_width, self.grid_height)
             self.random_corner = random.choice(opening)
             t = (
                 math.ceil(self.random_corner[0]),

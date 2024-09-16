@@ -1,3 +1,17 @@
+""" Copyright 2024 Sara Grecu
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License."""
+
 import cProfile
 import json
 import math
@@ -5,27 +19,30 @@ import os
 import pstats
 import random
 from io import StringIO
-from typing import Union, Tuple
+from typing import Union, Tuple, Set, List
 
-try:
-    from Model.agents import (
-        BaseStation,
-        GuideLine,
-        SquaredBlockedArea,
-        GrassTassel,
-        CircledBlockedArea,
-        Opening,
-        Robot,
-        IsolatedArea,
-    )
-except ImportError:
-    print(
-        "Error: Could not import `Model.agents`. Make sure it is installed and accessible."
-    )
-    exit()
+from Model.agents import (
+    BaseStation,
+    GuideLine,
+    SquaredBlockedArea,
+    CircledBlockedArea,
+    IsolatedArea,
+)
+
 
 
 def validate_and_adjust_base_station(coords, grid_width, grid_height, grid):
+    """
+    Validates and adjusts the base station coordinates based on the grid dimensions
+    and resource locations. If the coordinates are invalid, the function attempts to
+    move the base station to an adjacent valid tile.
+
+    :param coords: Coordinates of the base station (tuple of x, y).
+    :param grid_width: Width of the grid.
+    :param grid_height: Height of the grid.
+    :param grid: The grid where the base station is being placed.
+    :return: Valid coordinates of the base station (tuple of x, y) or adjusted coordinates.
+    """
     if (
             coords is None
             or not within_bounds(grid_width, grid_height, coords)
@@ -74,6 +91,16 @@ def perimeter_try_generating_base_station(
         base_station,
         grid,
 ) -> Tuple[int, int]:
+    """
+    Attempts to generate a valid base station at the perimeter of the grid. It tries
+    repeatedly until valid coordinates are found.
+
+    :param grid_width: Width of the grid.
+    :param grid_height: Height of the grid.
+    :param base_station: Initial base station coordinates (None if not generated).
+    :param grid: The grid where the base station is placed.
+    :return: Coordinates of the base station (tuple of x, y).
+    """
     def generate_perimeter_pair(width: int, length: int) -> Tuple[int, int]:
         return (
             (0, random.randint(0, width))
@@ -100,6 +127,17 @@ def big_center_try_generating_base_station(
         biggest_blocked_area,
         grid,
 ):
+    """
+    Attempts to generate a base station near the center of the largest blocked area.
+
+    :param center_tassel: Coordinates of the central tassel (tuple of x, y).
+    :param grid_width: Width of the grid.
+    :param grid_height: Height of the grid.
+    :param base_station: Initial base station coordinates (None if not generated).
+    :param biggest_blocked_area: Coordinates of the largest blocked area.
+    :param grid: The grid where the base station is placed.
+    :return: Coordinates of the base station (tuple of x, y) or None if not found.
+    """
     if biggest_blocked_area:
         while base_station is None:
             try:
@@ -117,21 +155,40 @@ def big_center_try_generating_base_station(
 
 
 class StationGuidelinesStrategy:
-    def locate_base_station(
-            self,
-            grid,
-            center_tassel,
-            biggest_blocked_area,
-            grid_width,
-            grid_height,
-    ):
+    """
+    Base class for strategies to locate a base station within a grid.
+    """
+
+    def locate_base_station(self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height):
+        """
+        Abstract method to locate a base station within the grid.
+
+        :param grid: The grid where the base station will be placed.
+        :param center_tassel: Coordinates of the central tassel (tuple of x, y).
+        :param biggest_blocked_area: Coordinates of the largest blocked area.
+        :param grid_width: Width of the grid.
+        :param grid_height: Height of the grid.
+        """
         pass
 
 
 class PerimeterPairStrategy(StationGuidelinesStrategy):
-    def locate_base_station(
-            self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height
-    ):
+    """
+    Strategy to place a base station along the perimeter of the grid.
+    """
+
+    def locate_base_station(self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height):
+        """
+        Attempts to place a base station on the perimeter of the grid by generating
+        random perimeter coordinates.
+
+        :param grid: The grid where the base station will be placed.
+        :param center_tassel: Coordinates of the central tassel (tuple of x, y).
+        :param biggest_blocked_area: Coordinates of the largest blocked area.
+        :param grid_width: Width of the grid.
+        :param grid_height: Height of the grid.
+        :return: Coordinates of the base station (tuple of x, y) or None if not found.
+        """
         base_station = None
         attempt_limit = 35
 
@@ -142,14 +199,28 @@ class PerimeterPairStrategy(StationGuidelinesStrategy):
             if base_station is not None and add_base_station(
                     grid, base_station, grid_width, grid_height
             ):
+                print(f"BASE STATION: {base_station}")
                 return base_station
         return None
 
 
 class BiggestRandomPairStrategy(StationGuidelinesStrategy):
-    def locate_base_station(
-            self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height
-    ) -> Union[Tuple[int, int], None]:
+    """
+    Strategy to place a base station randomly in the largest blocked area.
+    """
+
+    def locate_base_station(self, grid, center_tassel, biggest_blocked_area, grid_width, grid_height) -> Union[
+        Tuple[int, int], None]:
+        """
+        Attempts to place a base station in a randomly selected spot within the largest blocked area.
+
+        :param grid: The grid where the base station will be placed.
+        :param center_tassel: Coordinates of the central tassel (tuple of x, y).
+        :param biggest_blocked_area: Coordinates of the largest blocked area.
+        :param grid_width: Width of the grid.
+        :param grid_height: Height of the grid.
+        :return: Coordinates of the base station (tuple of x, y) or None if not found.
+        """
 
         base_station = None
         attempt_limit = 35
@@ -205,7 +276,18 @@ class BiggestCenterPairStrategy(StationGuidelinesStrategy):
         return None
 
 
+
 def mowing_time(speed_robot, autonomy_robot_seconds, cutting_diameter, total_area):
+    """
+    Estimates the time required for the robot to mow a given area based on the robot's
+    speed, cutting diameter, and total area to mow.
+
+    :param speed_robot: Speed of the robot (units per second).
+    :param autonomy_robot_seconds: Robot's autonomy in seconds (battery life).
+    :param cutting_diameter: Diameter of the cutting area.
+    :param total_area: Total area to be mowed.
+    :return: Estimated time in seconds for the mowing operation.
+    """
     cutting_width = cutting_diameter
 
     passes_needed = math.ceil(total_area / cutting_width)
@@ -214,8 +296,6 @@ def mowing_time(speed_robot, autonomy_robot_seconds, cutting_diameter, total_are
 
     total_time_seconds = total_distance / speed_robot
 
-    # print(f"AUTONOMY: {autonomy_robot_seconds} ======== TOTAL TIME: {total_time_seconds} ==== speed: {speed_robot}")
-
     if total_time_seconds > autonomy_robot_seconds:
         print(f"Warning: The robot's autonomy might not be sufficient.")
 
@@ -223,10 +303,25 @@ def mowing_time(speed_robot, autonomy_robot_seconds, cutting_diameter, total_are
 
 
 def euclidean_distance(p1: Tuple[int, int], p2: Tuple[int, int]) -> float:
+    """
+    Computes the Euclidean distance between two points.
+
+    :param p1: First point (x, y).
+    :param p2: Second point (x, y).
+    :return: Euclidean distance between the two points.
+    """
     return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
 
+
 def generate_biggest_center_pair(center_tassel, biggest_blocked_area):
+    """
+    Generates coordinates of the nearest point in the biggest blocked area relative to the center tassel.
+
+    :param center_tassel: Coordinates of the central tassel (tuple of x, y).
+    :param biggest_blocked_area: Coordinates of the largest blocked area.
+    :return: Coordinates of the nearest point in the biggest blocked area (tuple of x, y).
+    """
     if not biggest_blocked_area:
         return None
 
@@ -237,63 +332,13 @@ def generate_biggest_center_pair(center_tassel, biggest_blocked_area):
     return nearest_tuple
 
 
-"""def dfs(grid, x, y, resource, visited, grid_width, grid_height):
-    stack = [(x, y)]
-    count = 0
-
-    while stack:
-        cx, cy = stack.pop()
-
-        if (cx, cy) in visited:
-            continue
-
-        visited.add((cx, cy))
-        count += 1
-
-        for nx, ny in [(cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)]:
-            if (
-                0 <= nx < grid_width
-                and 0 <= ny < grid_height
-                and (nx, ny) not in visited
-            ):
-                if grid[ny][nx] == resource:
-                    stack.append((nx, ny))
-
-    return count"""
-
-"""def get_largest_successive_cells(
-    grid, grid_width: int, grid_height: int, resources: Set[Tuple[int, int]]
-) -> List[Tuple[int, int]]:
-    visited = set()
-    max_size = 0
-    max_resource = None
-
-    for x, y in resources:
-        if (x, y) not in visited:
-            resource = grid[x][y]
-            if contains_resource(
-                grid, (x, y), SquaredBlockedArea, grid_width, grid_height
-            ):  # Assuming contains_resource correctly identifies the resource
-                size = dfs(grid, x, y, resource, visited, grid_width, grid_height)
-                if size >= max_size:
-                    max_size = size
-                    max_resource = resource
-
-    if max_resource is None:
-        return []
-
-    # Re-run DFS to get all positions of the largest group
-    visited.clear()
-
-    for x, y in resources:
-        if (x, y) not in visited and grid[y][x] == max_resource:
-            dfs(grid, x, y, max_resource, visited, grid_width, grid_height)
-
-    result = list(visited)
-    return result"""
-
-
 def load_data_from_file(file_path: str) -> Union[Tuple[dict, dict, dict], None]:
+    """
+    Loads data from a JSON file and returns robot, environment, and simulator data.
+
+    :param file_path: Path to the JSON file.
+    :return: Tuple containing robot, environment, and simulator data or None if the file does not exist.
+    """
     if not os.path.exists(file_path):
         return None
 
@@ -308,10 +353,22 @@ def put_station_guidelines(
         grid,
         grid_width: int,
         grid_height: int,
-        random_corner_perimeter,
-        central_tassel,
-        biggest_area_blocked,
+        random_corner_perimeter: Tuple[int, int],
+        central_tassel: Tuple[int, int],
+        biggest_area_blocked
 ):
+    """
+    Places station guidelines on the grid, connecting the base station to a random corner or farthest point.
+
+    :param strategy: The strategy object that locates the base station.
+    :param grid: The grid object where cells are placed.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param random_corner_perimeter: A tuple representing a random corner on the grid perimeter.
+    :param central_tassel: The central tassel coordinates.
+    :param biggest_area_blocked: The area where the base station cannot be placed.
+    :return: The position of the base station, or None if not found.
+    """
     base_station_pos = strategy.locate_base_station(
         strategy, grid, central_tassel, biggest_area_blocked, grid_width, grid_height
     )
@@ -328,12 +385,12 @@ def put_station_guidelines(
                 grid_height,
             )
 
-        # Find the farthest point from base station
+        # Find the farthest point from the base station
         farthest_point = find_farthest_point(
             grid_width, grid_height, base_station_pos[0], base_station_pos[1]
         )
 
-        # If farthest point is found, draw line from base station to it
+        # If the farthest point is found, draw a line to it
         if farthest_point is not None:
             draw_line(
                 base_station_pos[0],
@@ -348,14 +405,40 @@ def put_station_guidelines(
     return base_station_pos
 
 
-def contains_any_resource(grid, pos, resource_types, grid_width, grid_height):
+def contains_any_resource(
+        grid, pos: Tuple[int, int], resource_types: List, grid_width: int, grid_height: int
+) -> bool:
+    """
+    Checks if a position contains any resources from a specified list of resource types.
+
+    :param grid: The grid object where cells are placed.
+    :param pos: The (x, y) position to check.
+    :param resource_types: A list of resource types to check for.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: True if any resource type is present, False otherwise.
+    """
     for rtype in resource_types:
         if contains_resource(grid, pos, rtype, grid_width, grid_height):
             return True
     return False
 
 
-def draw_line(x1, y1, x2, y2, grid, grid_width, grid_height):
+def draw_line(
+        x1: int, y1: int, x2: int, y2: int, grid, grid_width: int, grid_height: int
+) -> Set[Tuple[int, int]]:
+    """
+    Draws a line from one point to another on the grid, placing guidelines along the path.
+
+    :param x1: The starting x-coordinate.
+    :param y1: The starting y-coordinate.
+    :param x2: The ending x-coordinate.
+    :param y2: The ending y-coordinate.
+    :param grid: The grid object where cells are placed.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: A set of cells that have been modified with guidelines.
+    """
     dx = abs(x2 - x1)
     dy = abs(y2 - y1)
 
@@ -369,7 +452,6 @@ def draw_line(x1, y1, x2, y2, grid, grid_width, grid_height):
 
     while (x, y) != (x2, y2):
         if within_bounds(grid_width, grid_height, (x, y)):
-
             curr_cell = grid[x][y]
             if curr_cell is not None and not contains_any_resource(
                 grid,
@@ -404,12 +486,23 @@ def draw_line(x1, y1, x2, y2, grid, grid_width, grid_height):
     return cells_to_add
 
 
-def contains_resource(grid, cell, resource, grid_width, grid_height):
+def contains_resource(
+        grid, cell: Tuple[int, int], resource, grid_width: int, grid_height: int
+) -> bool:
+    """
+    Checks if a specific resource is present in the specified cell on the grid.
+
+    :param grid: The grid object where cells are placed.
+    :param cell: The (x, y) coordinates of the cell.
+    :param resource: The type of resource to check for.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: True if the resource is present, False otherwise.
+    """
     x, y = cell
 
-    # Add these checks to ensure x and y are within bounds
+    # Ensure x and y are within bounds
     if 0 <= x < grid_width and 0 <= y < grid_height:
-
         cell_contents = grid.get_cell_list_contents(cell)
 
         specific_agent = next(
@@ -424,7 +517,18 @@ def contains_resource(grid, cell, resource, grid_width, grid_height):
         return False
 
 
-def add_base_station(grid, position, grid_width, grid_height):
+def add_base_station(
+        grid, position: Tuple[int, int], grid_width: int, grid_height: int
+) -> bool:
+    """
+    Adds a base station to the grid at the specified position.
+
+    :param grid: The grid object where the base station will be placed.
+    :param position: The (x, y) coordinates where the base station should be placed.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: True if the base station is added successfully, False if the position is out of bounds.
+    """
     base_station = BaseStation((position[0], position[1]))
 
     return add_resource(
@@ -432,7 +536,17 @@ def add_base_station(grid, position, grid_width, grid_height):
     )
 
 
-def set_guideline_cell(x, y, grid, grid_width, grid_height):
+def set_guideline_cell(x: int, y: int, grid, grid_width: int, grid_height: int) -> bool:
+    """
+    Sets a guideline cell in the grid if the position is valid and not blocked by other resources.
+
+    :param x: The x-coordinate of the cell.
+    :param y: The y-coordinate of the cell.
+    :param grid: The grid object where cells are placed.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: True if the guideline cell is successfully set, False if out of bounds.
+    """
     # Check if the cell is within the grid boundaries (after wrapping)
     if not within_bounds(grid_width, grid_height, (x, y)):
         return False
@@ -456,7 +570,18 @@ def set_guideline_cell(x, y, grid, grid_width, grid_height):
         add_resource(grid, GuideLine((x, y)), x, y, grid_width, grid_height)
 
 
-def add_resource(grid, resource, x, y, grid_width, grid_height):
+def add_resource(grid, resource, x: int, y: int, grid_width: int, grid_height: int) -> bool:
+    """
+    Adds a resource to the grid at the specified position.
+
+    :param grid: The grid object where the resource will be placed.
+    :param resource: The resource to be added.
+    :param x: The x-coordinate of the position.
+    :param y: The y-coordinate of the position.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: True if the resource is added successfully, False if the position is out of bounds.
+    """
     if within_bounds(grid_width, grid_height, (x, y)):
         grid.place_agent(resource, (x, y))
         return True
@@ -464,11 +589,28 @@ def add_resource(grid, resource, x, y, grid_width, grid_height):
         return False
 
 
-def within_bounds(grid_width, grid_height, pos):
+def within_bounds(grid_width: int, grid_height: int, pos: Tuple[int, int]) -> bool:
+    """
+    Checks if a position is within the bounds of the grid.
+
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param pos: The (x, y) position to check.
+    :return: True if the position is within bounds, False otherwise.
+    """
     return 0 <= pos[0] < grid_width and 0 <= pos[1] < grid_height
 
 
-def find_farthest_point(grid_width, grid_height, fx, fy):
+def find_farthest_point(grid_width: int, grid_height: int, fx: int, fy: int) -> Tuple[int, int]:
+    """
+    Finds the farthest eligible point from the given position in the grid.
+
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param fx: The x-coordinate of the reference point.
+    :param fy: The y-coordinate of the reference point.
+    :return: The coordinates of the farthest point from (fx, fy).
+    """
     max_dist = 0
     result = (-1, -1)
 
@@ -490,7 +632,14 @@ def find_farthest_point(grid_width, grid_height, fx, fy):
     return result
 
 
-def populate_perimeter_guidelines(grid_width, grid_height, grid, dim_tassel):
+def populate_perimeter_guidelines(grid_width: int, grid_height: int, grid):
+    """
+    Populates the perimeter of the grid with guideline cells.
+
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param grid: The grid object where cells are placed.
+    """
     for x in range(0, grid_height):
         set_guideline_cell(x, 0, grid, grid_width, grid_height)
 
@@ -505,17 +654,29 @@ def populate_perimeter_guidelines(grid_width, grid_height, grid, dim_tassel):
 
 
 def get_grass_tassel(grass_tassels, pos):
-    # print(f"grass tassels: {grass_tassels}")
+    """
+    Retrieves a grass tassel at the specified position.
+
+    :param grass_tassels: A list of grass tassels.
+    :param pos: The (x, y) position to search for the tassel.
+    :return: The grass tassel at the given position, or None if not found.
+    """
     for res in grass_tassels:
 
-        # print(f"RES: {res}")
         if res.get() == pos:
             return res
 
     return None
 
 
-def find_central_tassel(rows, cols):
+def find_central_tassel(rows: int, cols: int) -> Tuple[int, int]:
+    """
+    Finds the central tassel of a grid with the given rows and columns.
+
+    :param rows: The number of rows in the grid.
+    :param cols: The number of columns in the grid.
+    :return: The coordinates of the central tassel.
+    """
     if rows % 2 == 1 and cols % 2 == 1:
         central_row = rows // 2
         central_col = cols // 2
@@ -527,6 +688,12 @@ def find_central_tassel(rows, cols):
 
 
 def profile_code(func):
+    """
+    Profiles the execution time of a function.
+
+    :param func: The function to be profiled.
+    :return: A wrapped function with profiling enabled.
+    """
     def wrapper(*args, **kwargs):
         pr = cProfile.Profile()
         pr.enable()

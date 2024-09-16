@@ -1,3 +1,17 @@
+""" Copyright 2024 Sara Grecu
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License."""
+
 import copy
 import importlib
 import logging
@@ -7,7 +21,6 @@ import random
 from datetime import datetime
 
 import pandas as pd
-from mesa.space import MultiGrid
 
 from Controller.environment_plugin import DefaultRandomGrid, DefaultCreatedGrid
 from Controller.robot_plugin import DefaultMovementPlugin
@@ -23,54 +36,50 @@ from Utils.utils import (
 )
 
 
-def _initialize_plugins(plugins):
+def _initialize_plugins(plugin_names):
     """
-    Import and instantiate plugins.
+    Dynamically import and instantiate plugin classes.
 
-    Args:
-        plugins (list): List of plugin names.
-
-    Returns:
-        list: List of initialized plugin instances.
+    :param plugin_names: List of plugin class names to import and instantiate.
+    :return: List of initialized plugin instances.
     """
-    plugin_cache = {}
-    initialized_plugins = []
-
-    for plugin_name in plugins:
-        if plugin_name not in plugin_cache:
-            try:
-                # Dynamically import the plugin module and class
-                plugin_module = importlib.import_module(f"Controller.{plugin_name}")
-                plugin_class = getattr(plugin_module, plugin_name)
-                plugin_cache[plugin_name] = plugin_class
-            except ImportError as e:
-                logging.error(f"Error importing plugin '{plugin_name}': {e}")
-                continue
-        initialized_plugins.append(plugin_cache[plugin_name]())
-
-    return initialized_plugins
+    plugins = []
+    for name in plugin_names:
+        try:
+            module = importlib.import_module(f"Controller.{name}")
+            plugin_class = getattr(module, name)
+            plugins.append(plugin_class())
+        except ImportError as e:
+            logging.error(f"Error importing plugin '{name}': {e}")
+    return plugins
 
 
 class Starter:
-    def __init__(self, env_plugins, r_plugins):
-        self.env_plugins = _initialize_plugins(env_plugins)
-        self.r_plugins = _initialize_plugins(r_plugins)
+    def __init__(self, env_plugin_names, robot_plugin_names):
+        self.env_plugins = _initialize_plugins(env_plugin_names)
+        self.robot_plugins = _initialize_plugins(robot_plugin_names)
 
     def run(self):
         """
-        Run the model with initialized plugins.
+        Execute the model with the initialized plugins.
         """
         run_model_with_parameters(
-            self.env_plugins, self.r_plugins[0] if self.r_plugins else None
+            self.env_plugins, self.robot_plugins[0] if self.robot_plugins else None
         )
 
 
 def execute_plugins(env_plugins, grid_width, grid_height):
-    corner = None, None
-    grid = None
+    """
+    Apply environment plugins to initialize the grid.
+
+    :param env_plugins: List of environment plugins to execute.
+    :param grid_width: Width of the grid.
+    :param grid_height: Height of the grid.
+    :return: Initialized grid and corner position.
+    """
+    grid, corner = None, None
     for plugin in env_plugins:
         try:
-            # Execute the plugin on the grid
             grid, corner = plugin(grid_width, grid_height).begin()
         except Exception as e:
             logging.error(f"Error in environment plugin: {e}")
@@ -78,7 +87,17 @@ def execute_plugins(env_plugins, grid_width, grid_height):
 
 
 def create_grid(grid_type, data_e, grid_width, grid_height, dim_tassel, env_plugins):
+    """
+    Create and initialize the grid based on the specified type.
 
+    :param grid_type: Type of the grid ("default" or "random").
+    :param data_e: Environment data.
+    :param grid_width: Width of the grid.
+    :param grid_height: Height of the grid.
+    :param dim_tassel: Dimension of each tassel.
+    :param env_plugins: List of environment plugins.
+    :return: Initialized grid and additional information.
+    """
     if grid_type == "default":
         raw_shapes = data_e["circles"] + data_e["squares"] + data_e["isolated_area"]
         return DefaultCreatedGrid(
@@ -106,16 +125,13 @@ def create_grid(grid_type, data_e, grid_width, grid_height, dim_tassel, env_plug
             "num_blocked_squares",
             "num_blocked_circles",
         ]
-
         params = {key: int(data_e[key]) for key in required_keys if key in data_e}
-
         params.update(
             {
                 "isolated_shape": data_e.get("isolated_area_shape"),
                 "dim_tassel": dim_tassel,
             }
         )
-
         return DefaultRandomGrid(grid_width, grid_height, **params).begin()
 
     else:
@@ -127,67 +143,50 @@ def split_at_first_hyphen(string):
     """
     Split a string at the first hyphen.
 
-    Args:
-        string (str): The input string to split.
-
-    Returns:
-        tuple: A tuple containing the part before the first hyphen and the part after the hyphen.
+    :param string: The string to split.
+    :return: Tuple containing the part before and after the hyphen.
     """
-    first_hyphen_index = string.find("-")
-    if first_hyphen_index == -1:
-        return string, ""
-    return string[:first_hyphen_index].strip(), string[first_hyphen_index + 1:].strip()
+    parts = string.split("-", 1)
+    return (parts[0].strip(), parts[1].strip()) if len(parts) > 1 else (parts[0], "")
 
 
 def process_grid_data(
         grid_height, grid_width, map_index, repetition_index, filename, dim_tassel, grid
 ):
     """
-    Process the grid data and save it to a CSV file.
+    Save grid data to a CSV file.
 
-    Args:
-        grid_height (int): Height of the grid.
-        grid_width (int): Width of the grid.
-        map_index (int): Index of the current map.
-        repetition_index (int): Index of the current repetition.
-        filename (str): Filename for saving the grid data.
-        dim_tassel (int): Dimension of the tassel.
-        grid (MultiGrid): The grid to process.
-
+    :param grid_height: Height of the grid.
+    :param grid_width: Width of the grid.
+    :param map_index: Index of the current map.
+    :param repetition_index: Index of the current repetition.
+    :param filename: Filename for the output CSV.
+    :param dim_tassel: Dimension of each tassel.
+    :param grid: The grid to process.
     """
-
-
-"""
-    external_data = [["" for x in range(grid_height)] for y in range(grid_width)]
+    external_data = [["" for _ in range(grid_height)] for _ in range(grid_width)]
 
     for x in range(grid_width):
         for y in range(grid_height):
-            #print(f"x:y {x,y} -- grid width: {grid_width} -- grid height: {grid_height} -- range: {range(grid_width)} --- {range(grid_height)}")
-            external_data[x][y] = grid.get_cell_list_contents([(x, y)])
+            external_data[x][y] = grid.get_cell_list_contents((x, y))
+
+    df = pd.DataFrame(external_data)
+    df = df.rename(columns={j: j * dim_tassel for j in range(grid_height)})
+    df.insert(0, "num_mappa", map_index)
+    df.insert(1, "ripetizione", repetition_index)
+    df.insert(2, "x", [dim_tassel * i for i in range(grid_width)])
 
     output_dir = os.path.abspath("./View/")
-    path = os.path.join(output_dir, filename)
-    df = pd.DataFrame(external_data)
-    df = df.rename(
-        columns={col_index: col_index * dim_tassel for col_index in range(grid_height)}
-    )
-    df.insert(loc=0, column="num_mappa", value=map_index)
-    df.insert(loc=1, column="ripetizione", value=repetition_index)
-    df.insert(loc=2, column="x", value=[dim_tassel * i for i in range(grid_width)])
-
-    df.to_csv(path, index=False)"""
+    df.to_csv(os.path.join(output_dir, filename), index=False)
 
 
 def get_current_datetime():
     """
-    Get the current date and time as a formatted string.
+    Get the current date and time formatted as a string.
 
-    Returns:
-        str: The current date and time in the format "YYYY-MM-DD HH:MM:SS".
+    :return: Current date and time in "YYYY-MM-DD HH:MM:SS" format.
     """
-    now = datetime.now()
-    current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
-    return current_date_time
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def runner(
@@ -202,11 +201,25 @@ def runner(
         j,
         cycle_data,
         filename,
-        created,
         dim_tassel,
 ):
-    movement_type, boing = split_at_first_hyphen(data_r["cutting_mode"])
+    """
+    Execute the simulation and process grid data.
 
+    :param robot_plugin: Robot plugin to use.
+    :param grid: The grid to simulate on.
+    :param cycles: Number of simulation cycles.
+    :param base_station_pos: Position of the base station.
+    :param data_r: Robot data.
+    :param grid_width: Width of the grid.
+    :param grid_height: Height of the grid.
+    :param i: Index of the current map.
+    :param j: Index of the current repetition.
+    :param cycle_data: List to collect cycle data.
+    :param filename: Filename for saving the output CSV.
+    :param dim_tassel: Dimension of each tassel.
+    """
+    movement_type, boing = split_at_first_hyphen(data_r["cutting_mode"])
     plugin = (
         robot_plugin(grid, base_station_pos)
         if robot_plugin
@@ -222,11 +235,10 @@ def runner(
         )
     )
 
-    # Process the grid data and save it to a CSV file
     process_grid_data(grid_height, grid_width, i, j, filename, dim_tassel, grid)
 
     current_data = []
-    Simulator(
+    simulator = Simulator(
         grid,
         cycles,
         base_station_pos,
@@ -238,46 +250,45 @@ def runner(
         current_data,
         filename,
         dim_tassel,
-    ).step()
+    )
+    simulator.step()
     cycle_data.append(current_data)
 
 
 def run_model_with_parameters(env_plugins, robot_plugin):
     """
-    Run the model with the given environment and robot plugins.
+    Run the simulation model with the given plugins.
 
-    Args:
-        env_plugins (list): List of environment plugins.
-        robot_plugin (callable): Robot plugin to execute.
+    :param env_plugins: List of environment plugins.
+    :param robot_plugin: Robot plugin to use.
     """
-    # Load setup data from the file
     data_r, data_e, data_s = load_data_from_file("../SetUp/data_file")
     repetitions = data_s["repetitions"]
     num_maps = data_s["num_maps"]
-
     cycles = data_s["cycle"] * 60
     dim_tassel = data_s["dim_tassel"]
     created = False
     grid_width = math.ceil(data_e["width"] / dim_tassel)
     grid_height = math.ceil(data_e["length"] / dim_tassel)
 
-    # Create seed
-    seed = random.randint(0, grid_width * grid_height)
-    random.seed(seed)
+    # Set random seed for reproducibility
+    random.seed(random.randint(0, grid_width * grid_height))
 
     for i in range(num_maps):
         cycle_data = []
-        if (data_e.get("circles") is not None) and not created:
-            grid, random_corner, biggest_area_blocked = create_grid(
-                "default", data_e, grid_width, grid_height, dim_tassel, env_plugins
-            )
-            created = True
-        else:
-            grid, random_corner, biggest_area_blocked = create_grid(
-                "random", data_e, grid_width, grid_height, dim_tassel, env_plugins
-            )
+        grid, random_corner, biggest_area_blocked = create_grid(
+            "default"
+            if data_e.get("circles") is not None and not created
+            else "random",
+            data_e,
+            grid_width,
+            grid_height,
+            dim_tassel,
+            env_plugins,
+        )
+        created = True
 
-        # Process the grid data and save it
+        # Save initial grid data
         process_grid_data(
             grid_height,
             grid_width,
@@ -288,99 +299,42 @@ def run_model_with_parameters(env_plugins, robot_plugin):
             grid,
         )
 
-        # Populate perimeter guidelines in the grid
-        populate_perimeter_guidelines(grid_width, grid_height, grid, dim_tassel)
+        # Populate perimeter guidelines
+        populate_perimeter_guidelines(grid_width, grid_height, grid)
 
-        # Create deep copies of the grid for different strategies
-        grid1 = copy.deepcopy(grid)
-        grid2 = copy.deepcopy(grid)
-        grid3 = copy.deepcopy(grid)
+        # Create copies of the grid for different strategies
+        grids = [copy.deepcopy(grid) for _ in range(3)]
 
         for j in range(repetitions):
-            # Place the base station using the perimeter pair strategy
-            base_station_pos = put_station_guidelines(
-                PerimeterPairStrategy,
-                grid1,
-                grid_width,
-                grid_height,
-                random_corner,
-                None,
-                biggest_area_blocked,
-            )
+            strategies = [
+                (PerimeterPairStrategy, f"perimeter_model{get_current_datetime()}.csv"),
+                """(BiggestRandomPairStrategy, f"big_model{get_current_datetime()}.csv"),
+                (BiggestCenterPairStrategy, f"bigcenter_model{get_current_datetime()}.csv")""",
+            ]
 
-            if base_station_pos is not None:
+            for strategy, filename in strategies:
+                """base_station_pos = put_station_guidelines(
+                    strategy,
+                    grids[strategies.index((strategy, filename))],
+                    grid_width,
+                    grid_height,
+                    random_corner,
+                    find_central_tassel(grid_width, grid_height) if strategy == BiggestCenterPairStrategy else None,
+                    biggest_area_blocked
+                )"""
+
+                # if base_station_pos:
                 runner(
-                    robot_plugin=robot_plugin,
-                    grid=grid1,
-                    cycles=cycles,
-                    base_station_pos=base_station_pos,
-                    data_r=data_r,
-                    grid_width=grid_width,
-                    grid_height=grid_height,
-                    i=i,
-                    j=j,
-                    cycle_data=cycle_data,
-                    filename=f"perimeter_model{get_current_datetime()}.csv",
-                    dim_tassel=dim_tassel,
-                    created=created,
-                )
-
-            if biggest_area_blocked:
-                # Place the base station using the biggest random pair strategy
-                base_station_pos = put_station_guidelines(
-                    BiggestRandomPairStrategy,
-                    grid2,
+                    robot_plugin,
+                    grids[strategies.index((strategy, filename))],
+                    cycles,
+                    (385, 275),
+                    data_r,
                     grid_width,
                     grid_height,
-                    random_corner,
-                    None,
-                    biggest_area_blocked,
+                    i,
+                    j,
+                    cycle_data,
+                    filename,
+                    dim_tassel,
                 )
-
-                if base_station_pos is not None:
-                    runner(
-                        robot_plugin,
-                        grid2,
-                        cycles,
-                        base_station_pos,
-                        data_r,
-                        grid_width,
-                        grid_height,
-                        i,
-                        j,
-                        cycle_data,
-                        f"big_model{get_current_datetime()}.csv",
-                        created,
-                        dim_tassel,
-                    )
-
-                # Find the central tassel position
-                central_tassel = find_central_tassel(grid_width, grid_height)
-
-                # Place the base station using the biggest center pair strategy
-                base_station_pos = put_station_guidelines(
-                    BiggestCenterPairStrategy,
-                    grid3,
-                    grid_width,
-                    grid_height,
-                    random_corner,
-                    central_tassel,
-                    biggest_area_blocked,
-                )
-
-                if base_station_pos is not None:
-                    runner(
-                        robot_plugin,
-                        grid3,
-                        cycles,
-                        base_station_pos,
-                        data_r,
-                        grid_width,
-                        grid_height,
-                        i,
-                        j,
-                        cycle_data,
-                        f"bigcenter_model{get_current_datetime()}.csv",
-                        created,
-                        dim_tassel,
-                    )
