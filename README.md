@@ -1,64 +1,63 @@
 # Smarters
 
-## Descrizione
+## Description
 
-Smarters è un simulatore avanzato per la gestione di robot in ambienti rappresentati come griglie di tasselli. Utilizza il framework Mesa per una visualizzazione dettagliata delle interazioni tra agenti e ambiente. Il simulatore permette di testare e valutare la performance di robot in scenari complessi con aree bloccate, aree isolate e diverse modalità di rimbalzo e taglio.
+Smarters is an advanced simulator for managing robots in environments represented as tile grids. It uses the Mesa framework for detailed visualization of interactions between agents and the environment. The simulator allows testing and evaluating robot performance in complex scenarios with blocked areas, isolated areas, and different bounce and cutting modes.
 
-## Rappresentazione dell'Ambiente
+## Environment Representation
 
-### Griglia di Tasselli
+### Tile Grid
 
-L'ambiente di simulazione è rappresentato come una griglia di tasselli, gestita tramite il framework Mesa con un oggetto di tipo `MultiGrid`. Ogni tassello può contenere più agenti e risorse.
+The simulation environment is represented as a tile grid, managed using the Mesa framework with a `MultiGrid` object. Each tile can contain multiple agents and resources.
 
-### Agenti e Risorse
+### Agents and Resources
 
-- **Agenti:** Entità mobili e interattive implementate come istanze della classe `Agent` di Mesa. Interagiscono con l'ambiente e tra di loro.
-- **Risorse:** Elementi statici distribuiti sui tasselli, come erba, linee guida, aree isolate e aperture.
+- **Agents:** Mobile and interactive entities implemented as instances of the `Agent` class from Mesa. They interact with the environment and each other.
+- **Resources:** Static elements distributed across tiles, such as grass, guiding lines, isolated areas, and openings.
 
-### Struttura dei Tasselli
+### Tile Structure
 
-I tasselli sono quadrati e possono contenere diversi elementi grazie alla natura multi-agente della `MultiGrid`. Le risorse includono:
-- Tasselli d'erba
-- Linee guida
-- Aree isolate
-- Aperture
+Tiles are square and can contain various elements due to the multi-agent nature of `MultiGrid`. Resources include:
+- Grass tiles
+- Guiding lines
+- Isolated areas
+- Openings
 
-### Aree Bloccate
+### Blocked Areas
 
-Le aree bloccate sono zone inaccessibili ai robot, rappresentate da `SquaredBlockedArea` e `CircledBlockedArea`. Possono includere edifici, piscine, o altre strutture impeditive. Possono essere impostate manualmente o distribuite casualmente.
+Blocked areas are zones inaccessible to robots, represented by `SquaredBlockedArea` and `CircledBlockedArea`. They may include buildings, pools, or other obstructive structures. These areas can be set manually or distributed randomly.
 
-### Aree Isolate
+### Isolated Areas
 
-Le aree isolate sono zone in cui i robot possono entrare solo attraverso aperture designate. Modellate con `IsolatedArea` e `Opening`, le loro dimensioni e posizioni possono essere definite manualmente o generate casualmente.
+Isolated areas are zones where robots can enter only through designated openings. Modeled with `IsolatedArea` and `Opening`, their size and position can be set manually or generated randomly.
 
-## Personalizzazione
+## Customization
 
-### Modello di Rimbalzo
+### Bounce Model
 
-Il modello di rimbalzo gestisce le collisioni del robot con ostacoli:
-- **Ping Pong:** Il robot riflette il proprio movimento in direzione opposta dopo aver incontrato un ostacolo.
-- **Random:** Il robot cerca sempre di avanzare verso il tassello in alto a sinistra. Se bloccato, tenta altre direzioni.
+The bounce model manages robot collisions with obstacles:
+- **Ping Pong:** The robot reflects its movement in the opposite direction after hitting an obstacle.
+- **Random:** The robot always tries to move towards the upper-left tile. If blocked, it attempts other directions.
 
-### Modello di Taglio
+### Cutting Model
 
-Il robot simula il taglio muovendosi sui tasselli e incrementando un contatore. Nella modalità random, il robot seleziona una direzione casuale e si sposta in modo rettilineo, influenzando i tasselli adiacenti.
+The robot simulates cutting by moving across tiles and incrementing a counter. In random mode, the robot chooses a random direction and moves in a straight line, affecting adjacent tiles.
 
-## Ciclo e Output
+## Simulation and Output
 
-### Ciclo di Simulazione
+### Simulation Cycle
 
-La simulazione si articola in:
-1. Generazione di mappe e posizioni della stazione base.
-2. Esplorazione di posizioni basate su aree bloccate.
-3. Durata della simulazione specificata nel file JSON di configurazione.
+The simulation consists of:
+1. Generating maps and base station positions.
+2. Exploring positions based on blocked areas.
+3. Simulation duration specified in the JSON configuration file.
 
-### Ciclo di Autonomia
+### Autonomy Cycle
 
-Il robot opera con un'autonomia limitata, eseguendo movimenti fino all'esaurimento. L'autonomia viene resettata dopo ogni ciclo, e la simulazione continua fino al numero di cicli impostato.
+The robot operates with limited autonomy, moving until exhausted. Autonomy is reset after each cycle, and simulation continues until the set number of cycles is completed.
 
 ### Output
 
-Dopo ogni ciclo di simulazione e di autonomia, vengono prodotti:
+After each autonomy and simulation cycle, the following are produced:
 - **Heatmap**
-- **File CSV:** Contenenti la matrice della mappa, informazioni sui tasselli e dettagli su erba, aree bloccate, e linee guida.
-
+- **CSV Files:** Containing the map matrix, tile information, and details on grass, blocked areas, and guiding lines.
