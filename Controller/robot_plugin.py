@@ -36,13 +36,12 @@ def pass_on_tassels(pos, grid, diameter, grass_tassels, agent, dim_tassel):
     """
     Increments the grass tassels of neighboring cells and updates the agent's autonomy.
 
-    Args:
-        pos (tuple): The current position.
-        grid: The grid object representing the environment.
-        diameter (float): The cutting diameter of the mower.
-        grass_tassels: The grass tassels object.
-        agent: The agent performing the action.
-        dim_tassel (int): The dimension of each tassel.
+    :param pos: Tuple representing the current position of the agent.
+    :param grid: The grid object representing the environment.
+    :param diameter: The cutting diameter of the mower.
+    :param grass_tassels: The grass tassels object.
+    :param agent: The agent performing the action.
+    :param dim_tassel: The dimension of each tassel.
     """
     radius = math.floor(diameter / 2)  # Calculate the radius for neighbor search
     neighbors = grid.get_neighborhood(
@@ -60,12 +59,11 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tass
     """
     Increments the grass tassel at the new position and updates the agent's autonomy and path taken.
 
-    Args:
-        grass_tassels: The grass tassels object.
-        new_pos (tuple): The new position.
-        agent: The agent performing the action.
-        cut_diameter (float): The cutting diameter of the mower.
-        dim_tassel:
+    :param grass_tassels: The grass tassels object.
+    :param new_pos: Tuple representing the new position of the agent.
+    :param agent: The agent performing the action.
+    :param cut_diameter: The cutting diameter of the mower.
+    :param dim_tassel: The dimension of each tassel.
     """
     grass_tassel = get_grass_tassel(
         grass_tassels, new_pos
@@ -84,15 +82,14 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
     """
     Default movement plugin for controlling the agent's movement in the grid.
 
-    Args:
-        movement_type (str): The type of movement ("random" or "systematic").
-        grid: The grid object representing the environment.
-        base_station_pos (tuple): The position of the base station.
-        boing (str): Unused parameter.
-        cut_diameter (int): The cutting diameter of the mower.
-        grid_width (int): The width of the grid.
-        grid_height (int): The height of the grid.
-        dim_tassel (int): The dimension of each tassel.
+    :param movement_type: The type of movement ("random" or "systematic").
+    :param grid: The grid object representing the environment.
+    :param base_station_pos: Tuple representing the position of the base station.
+    :param boing: Unused parameter.
+    :param cut_diameter: The cutting diameter of the mower.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param dim_tassel: The dimension of each tassel.
     """
 
     def __init__(
@@ -161,8 +158,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         """
         Moves the agent based on the specified movement type.
 
-        Args:
-            agent: The agent to be moved.
+        :param agent: The agent to be moved.
         """
         if self.movement_type == "random":  # If movement type is random
             self.random_move(agent, agent.get_gt())  # Perform random movement
@@ -173,9 +169,8 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         """
         Moves the agent randomly within the grid, updating its path and autonomy.
 
-        Args:
-            agent: The agent to be moved.
-            grass_tassels: The grass tassels object.
+        :param agent: The agent to be moved.
+        :param grass_tassels: The grass tassels object.
         """
         if agent.get_first():  # If it's the agent's first move
             aux_pos = self.pos  # Get the current position
@@ -311,9 +306,8 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         """
         Moves the agent back a specified number of tassels.
 
-        Args:
-            agent: The agent to be moved.
-            grass_tassels: The grass tassels object.
+        :param agent: The agent to be moved.
+        :param grass_tassels: The grass tassels object.
         """
         num_tass_back = math.ceil(
             self.cut_diameter / self.dim_tassel
@@ -344,5 +338,11 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                 break
 
     def bounce(self, agent, grass_tassels):
+        """
+        Moves the agent back and changes its direction.
+
+        :param agent: The agent to be moved.
+        :param grass_tassels: The grass tassels object.
+        """
         self.move_back(agent, grass_tassels)
         agent.dir = self.up_sx_tassel[agent.dir]

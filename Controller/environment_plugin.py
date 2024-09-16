@@ -44,6 +44,19 @@ def build_squared_isolated_area(
         grid_width,
         grid_height,
 ):
+    """
+    Create a squared isolated area in the grid with an optional opening.
+
+    :param x_start: The x-coordinate of the starting point.
+    :param y_start: The y-coordinate of the starting point.
+    :param isolated_area_width: The width of the isolated area.
+    :param isolated_area_length: The length of the isolated area.
+    :param grid: The grid where the area will be created.
+    :param dim_opening: The dimension of the opening to be created.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: A random point in the isolated area to be used as an opening.
+    """
     enclosure_tassels = []
 
     def create_resources(x_range, y_range):
@@ -102,6 +115,18 @@ def build_squared_isolated_area(
 def circular_isolation(
         grid, radius, x_start, y_start, dim_opening, grid_width, grid_height
 ):
+    """
+    Create a circular isolated area in the grid with optional openings.
+
+    :param grid: The grid where the area will be created.
+    :param radius: The radius of the circular isolated area.
+    :param x_start: The x-coordinate of the center of the circle.
+    :param y_start: The y-coordinate of the center of the circle.
+    :param dim_opening: The dimension of the openings to be created.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: A random point in the isolated area to be used as an opening.
+    """
     enclosure_tassels = []
     for i in range(-radius, radius + 1):
         for j in range(-radius, radius + 1):
@@ -143,6 +168,18 @@ def initialize_isolated_area(
         grid_height,
         radius,
 ):
+    """
+    Initialize isolated areas in the grid based on the specified shape and dimensions.
+
+    :param grid: The grid where the area will be created.
+    :param isolated_shape: The shape of the isolated area ("Square" or "Circle").
+    :param isolated_length: The length of the isolated area.
+    :param isolated_width: The width of the isolated area.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param radius: The radius for circular isolated areas.
+    :return: A random point in the isolated area to be used as an opening, if applicable.
+    """
     def choose_random_corner():
         seed = random.random()
         if seed == 0:
@@ -178,6 +215,10 @@ def initialize_isolated_area(
 def calculate_variance(value1, value2):
     """
     Calculate the variance between two values.
+
+    :param value1: The first value.
+    :param value2: The second value.
+    :return: The variance between the two values.
     """
     mean = (value1 + value2) / 2
     sum_of_squares = abs((value1 - mean) ** 2 + (value2 - mean) ** 2)
@@ -187,6 +228,11 @@ def calculate_variance(value1, value2):
 def find_and_draw_lines(grid, neighbors, grid_width, grid_height):
     """
     Find and draw lines connecting neighboring cells to the perimeter.
+
+    :param grid: The grid where the lines will be drawn.
+    :param neighbors: A list of neighboring cells.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
     """
 
     def find_perimeter_cells(width, height):
@@ -234,6 +280,17 @@ def fill_circular_blocked_area(
         grid_height,
         dim_tassel,
 ):
+    """
+    Fill a circular blocked area in the grid.
+
+    :param grid: The grid where the area will be created.
+    :param start_x: The x-coordinate of the center of the circle.
+    :param start_y: The y-coordinate of the center of the circle.
+    :param rad: The radius of the circular blocked area.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param dim_tassel: Dimension tassel.
+    """
     blocked_tassels = []
     for i in range(grid_height):  # Looping through x-coordinate range.
         for j in range(grid_width):  # Looping through y-coordinate range.
@@ -270,6 +327,21 @@ def add_squared_area(
         grid_height,
         dim_tassel,
 ):
+    """
+    Add a squared blocked area to the grid based on specified dimensions and position.
+
+    :param coord_x: The x-coordinate of the starting point of the squared area.
+    :param coord_y: The y-coordinate of the starting point of the squared area.
+    :param min_width_blocked: The minimum width of the blocked area.
+    :param max_height_blocked: The maximum height of the blocked area.
+    :param max_width_blocked: The maximum width of the blocked area.
+    :param min_height_blocked: The minimum height of the blocked area.
+    :param grid: The grid to which the blocked area will be added.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param dim_tassel: The dimension of each tassel.
+    :return: A list of coordinates representing the blocked area.
+    """
     columns = calculate_variance(min_width_blocked, max_width_blocked)
     rows = calculate_variance(min_height_blocked, max_height_blocked)
     num_rows = math.ceil((columns + min_width_blocked) / dim_tassel)
@@ -316,10 +388,25 @@ def add_squared_area(
 
 
 def aux_lines(blocked_area, grid, grid_width, grid_height):
+    """
+    Add guideline lines around the blocked area based on its neighbors.
+
+    :param blocked_area: List of coordinates representing the blocked area.
+    :param grid: The grid to which the guidelines will be added.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    """
+
     def get_circular_neighbors(cell):
-        # Helper function to validate a single coordinate value
+        """
+        Get the circular neighbors of a given cell.
+
+        :param cell: The coordinate of the cell.
+        :return: A list of valid circular neighbors.
+        """
+
         def _valid_coordinate(h, max_val):
-            """Check if a coordinate value is inside grid bounds"""
+            """Check if a coordinate value is inside grid bounds."""
             return -1 < h < max_val
 
         n = []  # Initialize empty set to store unique neighbor coordinates
@@ -349,7 +436,13 @@ def aux_lines(blocked_area, grid, grid_width, grid_height):
 
 def is_near_opening(grid, point, grid_width, grid_height):
     """
-    Check if a point is near an opening.
+    Check if a point is near an opening on the grid.
+
+    :param grid: The grid to check.
+    :param point: The coordinate of the point.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :return: True if the point is near an opening, False otherwise.
     """
     neighbors = grid.get_neighborhood(point, moore=True, include_center=False)
     return any(
@@ -359,6 +452,15 @@ def is_near_opening(grid, point, grid_width, grid_height):
 
 
 def generate_valid_agent_position(grid, grid_width, grid_height, max_attempts=35):
+    """
+    Generate a valid position for an agent that is not blocked or near an opening.
+
+    :param grid: The grid where the position will be checked.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param max_attempts: The maximum number of attempts to find a valid position.
+    :return: A tuple representing the valid position (x, y), or None if no valid position is found.
+    """
     blocked_types = [
         IsolatedArea,
         SquaredBlockedArea,
@@ -366,7 +468,7 @@ def generate_valid_agent_position(grid, grid_width, grid_height, max_attempts=35
         Opening,
         GuideLine,
     ]
-    for i in range(max_attempts):
+    for _ in range(max_attempts):
         x, y = (random.randint(0, grid_height), random.randint(0, grid_width))
 
         if (
@@ -397,6 +499,22 @@ def populate_blocked_areas(
         grid_height,
         dim_tassel,
 ):
+    """
+    Populate the grid with blocked areas, including squares and circles.
+
+    :param grid: The grid to populate.
+    :param num_squares: The number of square blocked areas to add.
+    :param num_circles: The number of circular blocked areas to add.
+    :param min_width_blocked: The minimum width for square blocked areas.
+    :param max_width_blocked: The maximum width for square blocked areas.
+    :param min_height_blocked: The minimum height for square blocked areas.
+    :param max_height_blocked: The maximum height for square blocked areas.
+    :param ray: The radius for circular blocked areas.
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param dim_tassel: The dimension of each tassel.
+    :return: A list of coordinates representing the blocked areas.
+    """
     blocked_tassels = []
     max_size = 0
 
@@ -418,7 +536,7 @@ def populate_blocked_areas(
             if len(blocked_tassels) > max_size:
                 max_size = len(blocked_tassels)
 
-    for j in range(num_circles):
+    for _ in range(num_circles):
         pos = generate_valid_agent_position(grid, grid_width, grid_height)
         if pos:
             fill_circular_blocked_area(
@@ -431,7 +549,26 @@ def populate_blocked_areas(
 
 class DefaultRandomGrid(RandomGrid):
     """
-    Default grid with random initialization for isolated areas and blocked areas.
+    A default grid initialized with random isolated and blocked areas.
+
+    :param width: The width of the grid.
+    :param length: The length of the grid.
+    :param isolated_shape: The shape of isolated areas.
+    :param num_blocked_squares: The number of square blocked areas.
+    :param min_width_square: The minimum width of square blocked areas.
+    :param max_width_square: The maximum width of square blocked areas.
+    :param min_height_square: The minimum height of square blocked areas.
+    :param max_height_square: The maximum height of square blocked areas.
+    :param num_blocked_circles: The number of circular blocked areas.
+    :param min_ray: The minimum radius for circular blocked areas.
+    :param max_ray: The maximum radius for circular blocked areas.
+    :param isolated_area_min_length: The minimum length of isolated areas.
+    :param isolated_area_max_length: The maximum length of isolated areas.
+    :param min_radius: The minimum radius for isolated areas.
+    :param max_radius: The maximum radius for isolated areas.
+    :param isolated_area_min_width: The minimum width of isolated areas.
+    :param isolated_area_max_width: The maximum width of isolated areas.
+    :param dim_tassel: The dimension of each tassel.
     """
 
     def __init__(
@@ -500,6 +637,11 @@ class DefaultRandomGrid(RandomGrid):
         self._grid = MultiGrid(width, length, torus=False)
 
     def begin(self):
+        """
+        Begin populating the grid with isolated areas and blocked areas.
+
+        :return: A tuple containing the grid, a random corner, and a list of blocked tassels.
+        """
         random_corner = initialize_isolated_area(
             self._grid,
             self._isolated_shape,
@@ -528,6 +670,16 @@ class DefaultRandomGrid(RandomGrid):
 
 
 def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height):
+    """
+    Add areas to the grid based on the type specified.
+
+    :param grid: The grid to which areas will be added.
+    :param t: The type of area ("circles", "squares", or "is_area").
+    :param tassels: The list of coordinates for the area.
+    :param opening_tassels: The list of coordinates for openings (used for "is_area").
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    """
     if t == "circles":
         for tassel in tassels:
             add_resource(
@@ -575,7 +727,13 @@ def add_area(grid, t, tassels, opening_tassels, grid_width, grid_height):
 
 class DefaultCreatedGrid(RandomGrid):
     """
-    Default grid created from raw shape data.
+    A default grid created from raw shape data.
+
+    :param grid_width: The width of the grid.
+    :param grid_height: The height of the grid.
+    :param data_e: The raw shape data.
+    :param raw_shapes: The raw shapes used for grid creation.
+    :param dim_tassel: The dimension of each tassel.
     """
 
     def __init__(self, grid_width, grid_height, data_e, raw_shapes, dim_tassel):
@@ -590,7 +748,9 @@ class DefaultCreatedGrid(RandomGrid):
 
     def begin(self):
         """
-        Begin populating the grid based on raw shape data.
+        Populate the grid based on raw shape data.
+
+        :return: A tuple containing the grid, a random corner, and a list of squares.
         """
         circles = self.data_e["circles"]
         circles_rounded = set()
@@ -599,8 +759,6 @@ class DefaultCreatedGrid(RandomGrid):
 
         if circles:
             for t in circles:
-                # for t in tassel:
-
                 x, y = (int(t[0]), int(t[1]))
                 circles_rounded.add((x, y))
 
@@ -610,11 +768,7 @@ class DefaultCreatedGrid(RandomGrid):
 
         if squares:
             for t in squares:
-                # for t in tassel:
-                x, y = (
-                    int(t[0]),
-                    int(t[1]),
-                )
+                x, y = (int(t[0]), int(t[1]))
                 squares_rounded.append((x, y))
             add_area(self.grid, "squares", squares_rounded, [], self.grid_width, self.grid_height)
 
@@ -623,25 +777,16 @@ class DefaultCreatedGrid(RandomGrid):
         if opening and isolated_area:
             opening_rounded = []
             for t in opening:
-                # for tassel in opening:
-                x, y = (
-                    math.ceil(t[0]),
-                    math.ceil(t[1]),
-                )
+                x, y = (math.ceil(t[0]), math.ceil(t[1]))
                 opening_rounded.append((x, y))
 
             isolated_area_rounded = set()
             for tassel in isolated_area:
-                x, y = (
-                    math.ceil(tassel[0]),
-                    math.ceil(tassel[1]),
-                )
+                x, y = (math.ceil(tassel[0]), math.ceil(tassel[1]))
                 isolated_area_rounded.add((x, y))
             add_area(self.grid, "is_area", isolated_area_rounded, opening_rounded, self.grid_width, self.grid_height)
             self.random_corner = random.choice(opening)
-            t = (
-                math.ceil(self.random_corner[0]),
-                math.ceil(self.random_corner[1]),
-            )
+            t = (math.ceil(self.random_corner[0]), math.ceil(self.random_corner[1]))
 
         return self.grid, t, squares_rounded
+

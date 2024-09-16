@@ -26,11 +26,7 @@ from Controller.environment_plugin import DefaultRandomGrid, DefaultCreatedGrid
 from Controller.robot_plugin import DefaultMovementPlugin
 from Model.model import Simulator
 from Utils.utils import (
-    put_station_guidelines,
     load_data_from_file,
-    find_central_tassel,
-    BiggestCenterPairStrategy,
-    BiggestRandomPairStrategy,
     PerimeterPairStrategy,
     populate_perimeter_guidelines,
 )
