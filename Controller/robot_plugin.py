@@ -163,7 +163,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         if self.movement_type == "random":  # If movement type is random
             self.random_move(agent, agent.get_gt())  # Perform random movement
         elif self.movement_type == "systematic":  # If movement type is systematic
-            pass  # Placeholder for systematic movement
+            self.systematic_move(agent, agent.get_gt())
 
     def random_move(self, agent, grass_tassels):
         """
@@ -302,6 +302,9 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         else:  # If the new position is out of bounds
             self.bounce(agent, grass_tassels)  # Bounce the agent
 
+    def systematic_move(self, agent, param):
+        pass
+
     def move_back(self, agent, grass_tassels):
         """
         Moves the agent back a specified number of tassels.
@@ -345,4 +348,6 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         :param grass_tassels: The grass tassels object.
         """
         self.move_back(agent, grass_tassels)
-        agent.dir = self.up_sx_tassel[agent.dir]
+        if self.boing == "random":
+            agent.dir = self.up_sx_tassel[agent.dir]
+        # else: if bounce mode is ping-pong it's not necessary to change the agent direction
