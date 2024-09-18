@@ -100,31 +100,20 @@ class Simulator(mesa.Model):
         :param autonomy: The autonomy of the robot in terms of steps it can take before recharging.
         :param base_station_pos: The position of the base station where the robot starts.
         """
-        if self.cycles < autonomy:
-            # Create the robot with all necessary attributes
-            self.robot = Robot(
-                len(self.grass_tassels) + 1,
-                self,
-                robot_plugin,
-                self.grass_tassels,
-                self.cycles,
-                self.speed,
-                2,
-                base_station_pos,
-            )
-        else:
-            # Create the robot with all necessary attributes
-            self.robot = Robot(
-                len(self.grass_tassels) + 1,
-                self,
-                robot_plugin,
-                self.grass_tassels,
-                autonomy,
-                self.speed,
-                2,
-                base_station_pos,
-            )
-        print(f"self.cycles {self.cycles} -- autonomy: {autonomy}")
+
+        # Create the robot with all necessary attributes
+        self.robot = Robot(
+            len(self.grass_tassels) + 1,
+            self,
+            robot_plugin,
+            self.grass_tassels,
+            autonomy,
+            self.speed,
+            2,
+            base_station_pos,
+            self.cycles
+        )
+
         # Place the robot at the base station and add it to the schedule
         self.grid.place_agent(self.robot, self.base_station_pos)
         self.schedule.add(self.robot)
@@ -135,11 +124,10 @@ class Simulator(mesa.Model):
         cycle = 0
 
         # Main simulation loop
-        while self.cycles > 0:
+        while self.robot.cycles > 0:
             while self.robot.get_autonomy() > 0:
                 self.robot.step()  # Move the robot until it runs out of autonomy
             self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
-            self.cycles -= self.robot.autonomy  # Decrease the remaining cycles
             cycle += 1
             self._process_cycle_data(cycle)  # Process the data for the current cycle
 

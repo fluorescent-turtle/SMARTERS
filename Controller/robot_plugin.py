@@ -75,6 +75,7 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tass
             agent.speed, agent.get_autonomy(), cut_diameter, (dim_tassel * dim_tassel)
         )
         agent.decrease_autonomy(mowing_t)  # Decrease the agent's autonomy
+        agent.decrease_cycles(mowing_t)
         agent.path_taken.add(new_pos)  # Add the new position to the agent's path taken
 
 

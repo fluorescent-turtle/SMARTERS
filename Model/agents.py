@@ -33,6 +33,8 @@ class Robot(Agent):
     :type shear_load: float
     :param base_station: The base station object where the robot can recharge.
     :type base_station: BaseStation
+    :param cycles: The number of cycles of the robot.
+    :type cycles: int
     """
 
     def __init__(
@@ -45,12 +47,14 @@ class Robot(Agent):
             speed,
             shear_load,
             base_station,
+            cycles
     ):
         super().__init__(unique_id, model)
 
         self.robot_plugin = robot_plugin  # Plugin used for movement
         self.grass_tassels = grass_tassels  # Number of grass tassels to collect
         self.autonomy = autonomy  # Autonomy level of the robot
+        self.cycles = cycles
 
         self.base_station = base_station
         self.speed = speed  # Speed of the robot
@@ -119,6 +123,9 @@ class Robot(Agent):
         :rtype: bool
         """
         return self.first
+
+    def decrease_cycles(self, param):
+        self.cycles -= param
 
 
 class GrassTassel:
