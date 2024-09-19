@@ -125,7 +125,7 @@ class Simulator(mesa.Model):
 
         # Main simulation loop
         while self.robot.cycles > 0:
-            while self.robot.get_autonomy() > 0:
+            while self.robot.get_autonomy() > 0 and self.robot.cycles > 0:
                 self.robot.step()  # Move the robot until it runs out of autonomy
             self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
             cycle += 1
