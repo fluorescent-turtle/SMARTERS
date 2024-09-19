@@ -261,7 +261,7 @@ def run_model_with_parameters(env_plugins, robot_plugin):
     data_r, data_e, data_s = load_data_from_file("../SetUp/data_file")
     repetitions = data_s["repetitions"]
     num_maps = data_s["num_maps"]
-    cycles = data_s["cycle"] * 60
+    cycles = data_s["cycle"] * 60  # Convert to seconds
     dim_tassel = data_s["dim_tassel"]
     created = False
     grid_width = math.ceil(data_e["width"] / dim_tassel)
