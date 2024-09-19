@@ -302,14 +302,34 @@ def run_model_with_parameters(env_plugins, robot_plugin):
         grids = [copy.deepcopy(grid) for _ in range(3)]
 
         for j in range(repetitions):
+            # Run the experiment with the specified strategy.
+            runner(
+                robot_plugin,
+                grids[0],
+                cycles,
+                (int(grid_width / 2), int(grid_height / 2)),
+                data_r,
+                grid_width,
+                grid_height,
+                i,
+                j,
+                cycle_data,
+                f"perimeter_model{get_current_datetime()}.csv",
+                dim_tassel,
+            )
+
+            """
+            # List of active strategies for base station placement.
+            # Uncomment other strategies if needed.
             strategies = [
                 (PerimeterPairStrategy, f"perimeter_model{get_current_datetime()}.csv"),
-                """(BiggestRandomPairStrategy, f"big_model{get_current_datetime()}.csv"),
-                (BiggestCenterPairStrategy, f"bigcenter_model{get_current_datetime()}.csv")""",
+                (BiggestRandomPairStrategy, f"big_model{get_current_datetime()}.csv"),
+                (BiggestCenterPairStrategy, f"bigcenter_model{get_current_datetime()}.csv")
             ]
-
+            
+            # Optionally add a base station according to the strategy.
             for strategy, filename in strategies:
-                """base_station_pos = put_station_guidelines(
+                base_station_pos = put_station_guidelines(
                     strategy,
                     grids[strategies.index((strategy, filename))],
                     grid_width,
@@ -317,14 +337,16 @@ def run_model_with_parameters(env_plugins, robot_plugin):
                     random_corner,
                     find_central_tassel(grid_width, grid_height) if strategy == BiggestCenterPairStrategy else None,
                     biggest_area_blocked
-                )"""
+                )
 
-                # if base_station_pos:
+                if base_station_pos:
+
+                # Run the experiment with the specified strategy.
                 runner(
                     robot_plugin,
                     grids[strategies.index((strategy, filename))],
                     cycles,
-                    (385, 275),
+                    base_station_pos,
                     data_r,
                     grid_width,
                     grid_height,
@@ -333,4 +355,4 @@ def run_model_with_parameters(env_plugins, robot_plugin):
                     cycle_data,
                     filename,
                     dim_tassel,
-                )
+                )"""
