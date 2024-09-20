@@ -240,7 +240,7 @@ def runner(
         base_station_pos,
         plugin,
         data_r["speed"],
-        (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60,
+        (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60,  # Converts to second
         i,
         j,
         current_data,
