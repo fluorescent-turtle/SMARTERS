@@ -160,7 +160,7 @@ class Simulator(mesa.Model):
             value=[i * self.dim_tassel for i in range(self.grid.width)],
         )
 
-        output_dir = os.path.abspath("./View/")  # Define the output directory
+        output_dir = os.path.abspath("../smarters/View/")  # Define the output directory
 
         def reduce_ticks(ticks, step):
             return [tick if i % step == 0 else "" for i, tick in enumerate(ticks)]

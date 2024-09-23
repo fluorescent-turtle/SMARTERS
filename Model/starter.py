@@ -172,7 +172,7 @@ def process_grid_data(
     df.insert(1, "ripetizione", repetition_index)
     df.insert(2, "x", [dim_tassel * i for i in range(grid_width)])
 
-    output_dir = os.path.abspath("./View/")
+    output_dir = os.path.abspath("../smarters/View/")
     df.to_csv(os.path.join(output_dir, filename), index=False)
 
 
