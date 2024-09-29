@@ -125,7 +125,7 @@ class Simulator(mesa.Model):
 
         # Main simulation loop
         while self.robot.cycles > 0:
-            while self.robot.get_autonomy() > 0 and self.robot.cycles > 0:
+            while self.robot.get_autonomy() > 0:  # and self.robot.cycles > 0:
                 self.robot.step()  # Move the robot until it runs out of autonomy
             self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
             cycle += 1
@@ -201,30 +201,46 @@ class Simulator(mesa.Model):
         plt.savefig(file_path)  # Save the heatmap as a PNG file
         plt.close(fig)  # Close the figure
 
-        fig, ax = plt.subplots()
-
+        # Flatten the array (in case of multidimensional data)
         flattened_counts = np.array(counts).flatten()
 
-        # Create histogram plot directly from the flattened array
+        # Create the figure and axis objects
+        fig, ax = plt.subplots()
+
+        # Create the histogram plot with uniform bins
         bins = np.linspace(min(flattened_counts), max(flattened_counts), 20)
         sns.histplot(flattened_counts, bins=bins, discrete=True, edgecolor='black')
 
+        # Set axis limits to ensure consistent scaling
+        # ax.set_xlim(min(flattened_counts) - 1, max(flattened_counts) + 2)
+        ax.set_xlim(0, 120)
+        ax.set_ylim(0, 10 ** 6)  # Fixed upper limit for y-axis
+
+        ax.set_xticks([1, 5, 10, 50, 100, 120])
+
+        # Define y-axis ticks for uniform scaling
+        # Adjust ticks according to desired scale; here set for log scaling
+        ax.set_yticks([1, 10, 100, 10 ** 3, 10 ** 4, 10 ** 5, 10 ** 6])
+        ax.get_yaxis().set_major_formatter(plt.ScalarFormatter())  # Use normal number formatting
+
+        # Set axis scales
         plt.xscale('linear')
-        plt.yscale('symlog')
+        plt.yscale('symlog', linthresh=1)  # 'linthresh' avoids over-compression of linear part near zero
 
-        # Set x-axis label
+        # Set x and y axis labels
         plt.xlabel("Tassel Value")
-
-        # Set y-axis label
         plt.ylabel("Frequency")
 
         # Adjust layout to prevent overlapping labels
         plt.tight_layout()
 
-        # Save plot as PNG file
+        # Save the plot as a PNG file (uncomment and modify path to use)
         plt.savefig(os.path.join(output_dir, f"hist_{timestamp}_cycle_{cycle}.png"))
 
-        # Close figure
+        # Display the plot
+        # plt.show()
+
+        # Close the figure to free memory
         plt.close(fig)
 
         # Save the DataFrame as a CSV file

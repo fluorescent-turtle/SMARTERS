@@ -42,7 +42,7 @@ def _initialize_plugins(plugin_names):
     plugins = []
     for name in plugin_names:
         try:
-            module = importlib.import_module(f"Controller.{name}")
+            module = importlib.import_module(f"./Controller/{name}")
             plugin_class = getattr(module, name)
             plugins.append(plugin_class())
         except ImportError as e:
@@ -307,7 +307,7 @@ def run_model_with_parameters(env_plugins, robot_plugin):
                 robot_plugin,
                 grids[0],
                 cycles,
-                (int(grid_width / 2), int(grid_height / 2)),
+                (0, int(grid_height / 3)),
                 data_r,
                 grid_width,
                 grid_height,
@@ -320,7 +320,7 @@ def run_model_with_parameters(env_plugins, robot_plugin):
 
             """
             # List of active strategies for base station placement.
-            # Uncomment other strategies if needed.
+            # Uncomment if needed.
             strategies = [
                 (PerimeterPairStrategy, f"perimeter_model{get_current_datetime()}.csv"),
                 (BiggestRandomPairStrategy, f"big_model{get_current_datetime()}.csv"),
