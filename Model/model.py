@@ -205,6 +205,7 @@ class Simulator(mesa.Model):
         flattened_counts = np.array(counts).flatten()
 
         # Create the figure and axis objects
+        #
         fig, ax = plt.subplots()
 
         # Create the histogram plot with uniform bins
