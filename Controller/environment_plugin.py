@@ -17,7 +17,7 @@ import random
 
 from mesa.space import MultiGrid
 from scipy.spatial import KDTree
-from Controller.default_grid import RandomGrid
+from Controller.random_grid import RandomGrid
 from Model.agents import (
     SquaredBlockedArea,
     CircledBlockedArea,

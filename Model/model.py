@@ -43,10 +43,12 @@ class Simulator(mesa.Model):
             cycle_data,
             filename,
             dim_tassel,
+            recharge
     ):
         """
         Initialize the simulator for the grass cutting simulation.
 
+        :param recharge: Recharge time
         :param grid: The simulation grid.
         :param cycles: Number of cycles to run the simulation.
         :param base_station_pos: The position of the base station.
@@ -72,6 +74,7 @@ class Simulator(mesa.Model):
         self.initialize_robot(robot_plugin, autonomy, base_station_pos)
         self.i = i
         self.j = j
+        self.recharge = recharge
 
         self.running = True
         self.cycle_data = cycle_data
@@ -127,6 +130,7 @@ class Simulator(mesa.Model):
         while self.robot.cycles > 0:
             while self.robot.get_autonomy() > 0:  # and self.robot.cycles > 0:
                 self.robot.step()  # Move the robot until it runs out of autonomy
+            self.robot.cycles -= self.recharge
             self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
             cycle += 1
             self._process_cycle_data(cycle)  # Process the data for the current cycle

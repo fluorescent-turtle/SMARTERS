@@ -198,10 +198,12 @@ def runner(
         cycle_data,
         filename,
         dim_tassel,
+        recharge
 ):
     """
     Execute the simulation and process grid data.
 
+    :param recharge: Recharge time.
     :param robot_plugin: Robot plugin to use.
     :param grid: The grid to simulate on.
     :param cycles: Number of simulation cycles.
@@ -234,19 +236,9 @@ def runner(
     process_grid_data(grid_height, grid_width, i, j, filename, dim_tassel, grid)
 
     current_data = []
-    simulator = Simulator(
-        grid,
-        cycles,
-        base_station_pos,
-        plugin,
-        data_r["speed"],
-        (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60,  # Converts to second
-        i,
-        j,
-        current_data,
-        filename,
-        dim_tassel,
-    )
+    simulator = Simulator(grid, cycles, base_station_pos, plugin, data_r["speed"],
+                          (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60, i, j, current_data, filename,
+                          dim_tassel, recharge)
     simulator.step()
     cycle_data.append(current_data)
 
@@ -266,6 +258,7 @@ def run_model_with_parameters(env_plugins, robot_plugin):
     created = False
     grid_width = math.ceil(data_e["width"] / dim_tassel)
     grid_height = math.ceil(data_e["length"] / dim_tassel)
+    recharge = data_r["recharge"]
 
     # Set random seed for reproducibility
     random.seed(random.randint(0, grid_width * grid_height))
@@ -303,20 +296,8 @@ def run_model_with_parameters(env_plugins, robot_plugin):
 
         for j in range(repetitions):
             # Run the experiment with the specified strategy.
-            runner(
-                robot_plugin,
-                grids[0],
-                cycles,
-                (0, int(grid_height / 3)),
-                data_r,
-                grid_width,
-                grid_height,
-                i,
-                j,
-                cycle_data,
-                f"perimeter_model{get_current_datetime()}.csv",
-                dim_tassel,
-            )
+            runner(robot_plugin, grids[0], cycles, (0, int(grid_height / 3)), data_r, grid_width, grid_height, i, j,
+                   cycle_data, f"perimeter_model{get_current_datetime()}.csv", dim_tassel, recharge)
 
             """
             # List of active strategies for base station placement.
