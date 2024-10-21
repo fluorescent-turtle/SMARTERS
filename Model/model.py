@@ -11,7 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License."""
-
+import math
 import os
 from datetime import datetime
 
@@ -79,6 +79,7 @@ class Simulator(mesa.Model):
         self.running = True
         self.cycle_data = cycle_data
         self.filename = filename
+        self.autonomy = autonomy
 
     def initialize_grass_tassels(self):
         """Initialize the grass tassels and place them in the grid."""
@@ -125,19 +126,26 @@ class Simulator(mesa.Model):
         """Perform a single step of the simulation."""
         self.schedule.step()  # Progress the simulation schedule by one step
         cycle = 0
+        beginning = 0
+        stop = 0
+        recharge = 0
 
         # Main simulation loop
         while self.robot.cycles > 0:
-            while self.robot.get_autonomy() > 0:  # and self.robot.cycles > 0:
+            while self.robot.get_autonomy() > 1:  # and self.robot.cycles > 0:
                 self.robot.step()  # Move the robot until it runs out of autonomy
             self.robot.cycles -= self.recharge
-            self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
+
             cycle += 1
-            self._process_cycle_data(cycle)  # Process the data for the current cycle
+            stop = math.ceil(self.autonomy - self.robot.get_autonomy()) + beginning
+            recharge = (self.recharge * 60) + stop
+            self._process_cycle_data(cycle, beginning, stop, recharge)  # Process the data for the current cycle
+            beginning = recharge + 60  # plus 1 minute
+            self.robot.reset_autonomy()  # Reset the robot's autonomy for the next cycle
 
         self.running = False  # Mark the simulation as not running
 
-    def _process_cycle_data(self, cycle):
+    def _process_cycle_data(self, cycle, beginning, stop, recharge):
         """
         Process the data collected during each cycle and save it.
 
@@ -158,8 +166,11 @@ class Simulator(mesa.Model):
         df.insert(loc=0, column="num_mappa", value=self.i)
         df.insert(loc=1, column="ripetizione", value=self.j)
         df.insert(loc=2, column="cycle", value=cycle)
+        df.insert(loc=3, column="beginning time", value=math.ceil(beginning / 60))
+        df.insert(loc=4, column="stop time", value=math.ceil(stop / 60))
+        df.insert(loc=5, column="after recharge time", value=math.ceil(recharge / 60))
         df.insert(
-            loc=3,
+            loc=6,
             column="x",
             value=[i * self.dim_tassel for i in range(self.grid.width)],
         )
@@ -216,7 +227,6 @@ class Simulator(mesa.Model):
         sns.histplot(flattened_counts, bins=bins, discrete=True, edgecolor='black')
 
         # Set axis limits to ensure consistent scaling
-        # ax.set_xlim(min(flattened_counts) - 1, max(flattened_counts) + 2)
         ax.set_xlim(0, 120)
         ax.set_ylim(0, 10 ** 6)  # Fixed upper limit for y-axis
 

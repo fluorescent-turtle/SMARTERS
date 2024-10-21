@@ -19,6 +19,7 @@ import math
 import os
 import random
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 
@@ -51,17 +52,17 @@ def _initialize_plugins(plugin_names):
 
 
 class Starter:
-    def __init__(self, env_plugin_names, robot_plugin_names):
+    def __init__(self, env_plugin_names, robot_plugin_names, filename):
         self.env_plugins = _initialize_plugins(env_plugin_names)
         self.robot_plugins = _initialize_plugins(robot_plugin_names)
+        self.filename = filename
 
     def run(self):
         """
         Execute the model with the initialized plugins.
         """
-        run_model_with_parameters(
-            self.env_plugins, self.robot_plugins[0] if self.robot_plugins else None
-        )
+        run_model_with_parameters(self.env_plugins, self.robot_plugins[0] if self.robot_plugins else None,
+                                  self.filename)
 
 
 def execute_plugins(env_plugins, grid_width, grid_height):
@@ -237,20 +238,26 @@ def runner(
 
     current_data = []
     simulator = Simulator(grid, cycles, base_station_pos, plugin, data_r["speed"],
-                          (data_r["autonomy"] - (data_r["autonomy"] / 10)) * 60, i, j, current_data, filename,
+                          (data_r["autonomy"] - (data_r["autonomy"] * (10 / 100))) * 60, i, j, current_data, filename,
                           dim_tassel, recharge)
     simulator.step()
     cycle_data.append(current_data)
 
 
-def run_model_with_parameters(env_plugins, robot_plugin):
+def run_model_with_parameters(env_plugins, robot_plugin, filename):
     """
     Run the simulation model with the given plugins.
 
+    :param filename: Data file name
     :param env_plugins: List of environment plugins.
     :param robot_plugin: Robot plugin to use.
     """
-    data_r, data_e, data_s = load_data_from_file("../SetUp/data_file")
+    print(f"{str(Path(filename).resolve())}")
+    try:
+        data_r, data_e, data_s = load_data_from_file(Path(filename.strip()).resolve())
+    except TypeError as e:
+        print(f"Error: {e}")
+        exit()
     repetitions = data_s["repetitions"]
     num_maps = data_s["num_maps"]
     cycles = data_s["cycle"] * 60  # Convert to seconds

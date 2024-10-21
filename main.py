@@ -12,32 +12,43 @@ def parse_cli(argv):
     Returns:
       A dictionary of parsed arguments.
     """
+    args = argv[1:]  # Skip the script name
+    r_plugins = []
+    e_plugins = []
+    filen = None
 
-    # Get the arguments following the script name.
-    args = argv[1:]
-
-    # Parse the arguments.
-    parsed_args = {}
-    e_plugins = {}
-    r_plugins = {}
+    current_flag = None
 
     for arg in args:
         if arg.startswith("--"):
-            key, value = arg.split("--")
-            parsed_args[key] = value
+            # Set current flag if we encounter a new flag
+            if arg == "--r":
+                current_flag = 'r_plugins'
+            elif arg == "--e":
+                current_flag = 'e_plugins'
+            elif arg == "--d":
+                current_flag = 'data_file'
+            else:
+                raise ValueError(f"Unknown argument: {arg}")
+        else:
+            # Add value to the current flag
+            if current_flag == 'r_plugins':
+                r_plugins.append(arg)
+            elif current_flag == 'e_plugins':
+                e_plugins.append(arg)
+            elif current_flag == 'data_file':
+                if filen is not None:
+                    raise ValueError(f"Multiple data files specified: {filen} and {arg}")
+                filen = arg
+            else:
+                raise ValueError(f"Unexpected value without a flag: {arg}")
 
-            if key == "e":
-                e_plugins[value] = True
-            elif key == "r":
-                r_plugins[value] = True
-
-    # Return the parsed arguments.
-    return e_plugins, r_plugins
+    return e_plugins, r_plugins, filen
 
 
 if __name__ == "__main__":
-    env_plugins, robot_plugins = parse_cli(sys.argv)
+    env_plugins, robot_plugins, filename = parse_cli(sys.argv)
 
     # Use command-line arguments as plugin names
-    simulator = Starter(env_plugins, robot_plugins)
+    simulator = Starter(env_plugins, robot_plugins, filename)
     simulator.run()

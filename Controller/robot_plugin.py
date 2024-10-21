@@ -69,14 +69,15 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tass
         grass_tassels, new_pos
     )  # Get the grass tassel at the new position
     if grass_tassel is not None:  # If there is a grass tassel
-        grass_tassel.increment()  # Increment the grass tassel
-
         mowing_t = mowing_time(  # Calculate the mowing time
             agent.speed, agent.get_autonomy(), cut_diameter, (dim_tassel * dim_tassel)
         )
-        agent.decrease_autonomy(mowing_t)  # Decrease the agent's autonomy
-        agent.decrease_cycles(mowing_t)
-        agent.path_taken.add(new_pos)  # Add the new position to the agent's path taken
+        if mowing_t > 0:
+            agent.decrease_autonomy(mowing_t)  # Decrease the agent's autonomy
+            agent.decrease_cycles(mowing_t)
+            agent.path_taken.add(new_pos)  # Add the new position to the agent's path taken
+
+            grass_tassel.increment()  # Increment the grass tassel
 
 
 class DefaultMovementPlugin(MovementPlugin, ABC):

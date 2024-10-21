@@ -298,6 +298,7 @@ def mowing_time(speed_robot, autonomy_robot_seconds, cutting_diameter, total_are
 
     if total_time_seconds > autonomy_robot_seconds:
         print(f"Warning: The robot's autonomy might not be sufficient.")
+        return 0
 
     return total_time_seconds
 
@@ -332,7 +333,7 @@ def generate_biggest_center_pair(center_tassel, biggest_blocked_area):
     return nearest_tuple
 
 
-def load_data_from_file(file_path: str) -> Union[Tuple[dict, dict, dict], None]:
+def load_data_from_file(file_path) -> Union[Tuple[dict, dict, dict], None]:
     """
     Loads data from a JSON file and returns robot, environment, and simulator data.
 
