@@ -43,16 +43,17 @@ def pass_on_tassels(pos, grid, diameter, grass_tassels, agent, dim_tassel):
     :param agent: The agent performing the action.
     :param dim_tassel: The dimension of each tassel.
     """
-    radius = math.floor(diameter / 2)  # Calculate the radius for neighbor search
+    radius = math.ceil(diameter / 2)  # Calculate the radius for neighbor search
     neighbors = grid.get_neighborhood(
         pos, moore=False, include_center=True, radius=radius
     )  # Get neighboring positions
 
     for neighbor in neighbors:
         if within_bounds(grid.width, grid.height, neighbor):
-            pass_on_current_tassel(
+            if pass_on_current_tassel(
                 grass_tassels, neighbor, agent, diameter, dim_tassel
-            )  # Pass on the current tassel to the neighbor
+            ) == 0:  # Pass on the current tassel to the neighbor
+                break
 
 
 def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tassel):
@@ -78,6 +79,8 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tass
             agent.path_taken.add(new_pos)  # Add the new position to the agent's path taken
 
             grass_tassel.increment()  # Increment the grass tassel
+        else:
+            return 0
 
 
 class DefaultMovementPlugin(MovementPlugin, ABC):

@@ -127,12 +127,10 @@ class Simulator(mesa.Model):
         self.schedule.step()  # Progress the simulation schedule by one step
         cycle = 0
         beginning = 0
-        stop = 0
-        recharge = 0
 
         # Main simulation loop
         while self.robot.cycles > 0:
-            while self.robot.get_autonomy() > 1:  # and self.robot.cycles > 0:
+            while math.floor(self.robot.get_autonomy()) > 0:  # and self.robot.cycles > 0:
                 self.robot.step()  # Move the robot until it runs out of autonomy
             self.robot.cycles -= self.recharge
 
