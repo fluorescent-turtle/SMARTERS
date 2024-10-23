@@ -257,7 +257,7 @@ def run_model_with_parameters(env_plugins, robot_plugin, filename):
     :param env_plugins: List of environment plugins.
     :param robot_plugin: Robot plugin to use.
     """
-    print(f"{str(Path(filename).resolve())}")
+
     try:
         data_r, data_e, data_s = load_data_from_file(Path(filename.strip()).resolve())
     except TypeError as e:
