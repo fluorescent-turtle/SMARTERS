@@ -173,7 +173,7 @@ def process_grid_data(
     df.insert(1, "ripetizione", repetition_index)
     df.insert(2, "x", [dim_tassel * i for i in range(grid_width)])
 
-    # Use os.path.abspath to get the absolute path
+    ## Use os.path.abspath to get the absolute path
     output_dir = os.path.abspath("../View/")
 
     # Use Path to check if the directory exists, and create it if it doesn't
