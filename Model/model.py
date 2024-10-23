@@ -14,6 +14,7 @@
 import math
 import os
 from datetime import datetime
+from pathlib import Path
 
 import mesa
 import numpy as np
@@ -173,7 +174,9 @@ class Simulator(mesa.Model):
             value=[i * self.dim_tassel for i in range(self.grid.width)],
         )
 
-        output_dir = os.path.abspath("../smarters/View/")  # Define the output directory
+        output_dir = os.path.abspath("../View/")  # Define the output directory
+        # Use Path to check if the directory exists, and create it if it doesn't
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         def reduce_ticks(ticks, step):
             return [tick if i % step == 0 else "" for i, tick in enumerate(ticks)]
