@@ -139,6 +139,10 @@ class GrassTassel:
         self.cut = -1  # Number of times the grass tassel has been cut
         self.pos = pos  # Position of the grass tassel
 
+    @property
+    def unique_id(self):
+        return id(self)
+
     def increment(self):
         """
         Increment the cut count.
@@ -184,6 +188,10 @@ class IsolatedArea:
     def __init__(self, pos):
         self.pos = pos
 
+    @property
+    def unique_id(self):
+        return id(self)
+
     def get(self):
         """
         Get the position of the isolated area.
@@ -214,6 +222,10 @@ class Opening:
         """
         return self.pos
 
+    @property
+    def unique_id(self):
+        return id(self)
+
 
 class BaseStation:
     """
@@ -240,6 +252,10 @@ class BaseStation:
         """
         self.pos = None
 
+    @property
+    def unique_id(self):
+        return id(self)
+
 
 class SquaredBlockedArea:
     """
@@ -251,6 +267,10 @@ class SquaredBlockedArea:
 
     def __init__(self, pos):
         self.pos = pos
+
+    @property
+    def unique_id(self):
+        return id(self)
 
     def get(self):
         """
@@ -273,6 +293,10 @@ class CircledBlockedArea:
     def __init__(self, pos):
         self.pos = pos
 
+    @property
+    def unique_id(self):
+        return id(self)
+
 
 class GuideLine:
     """
@@ -283,6 +307,10 @@ class GuideLine:
 
     def __init__(self, pos):
         self.pos = pos
+
+    @property
+    def unique_id(self):
+        return id(self)
 
     def get(self):
         """

@@ -174,7 +174,7 @@ class Simulator(mesa.Model):
             value=[i * self.dim_tassel for i in range(self.grid.width)],
         )
 
-        output_dir = os.path.abspath("../View/")  # Define the output directory
+        output_dir = os.path.realpath("../smarters/View/")  # Define the output directory
         # Use Path to check if the directory exists, and create it if it doesn't
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -208,7 +208,7 @@ class Simulator(mesa.Model):
         )
 
         timestamp = datetime.now().strftime(
-            "%Y-%m-%d_%H:%M:%S"
+            "%Y-%m-%d_%H-%M-%S"
         )  # Generate a timestamp for the filename
         file_path = os.path.join(
             output_dir, f"heatmap_{timestamp}_cycle_{cycle}.png"
