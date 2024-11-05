@@ -193,6 +193,7 @@ class Simulator(mesa.Model):
         fig, ax = plt.subplots()
         ax.xaxis.tick_top()  # Place x-axis ticks at the top
         maximum = max(max(sublist) for sublist in counts)
+        # plt.figure(figsize=(self.grid.height * self.dim_tassel, self.grid.width * self.dim_tassel))
 
         sns.heatmap(
             data=counts,

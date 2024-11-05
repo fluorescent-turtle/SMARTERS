@@ -317,7 +317,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         :param agent: The agent to be moved.
         :param grass_tassels: The grass tassels object.
         """
-        num_tass_back = math.ceil(
+        num_tass_back = math.floor(
             self.cut_diameter / self.dim_tassel
         )  # Calculate the number of tassels to move back
         for _ in range(num_tass_back):  # For each tassel to move back
