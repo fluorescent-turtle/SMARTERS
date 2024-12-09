@@ -20,7 +20,7 @@ Tiles are square and can contain various elements due to the multi-agent nature 
   - Guiding lines
   - Isolated areas
   - Blocked Areas
-  -  Openings
+  - Openings
     
 
 #### Blocked Areas
@@ -49,9 +49,9 @@ The robot simulates cutting by moving across tiles and incrementing a counter. I
 
 To initialize Smarters, a JSON file is required with one of two possible structures:
 
-    Structure 1: A full configuration file, including robot settings, environment parameters, and simulation variables. This structure defines robot specifications (type, speed, cutting mode, etc.), grid dimensions, and simulation details such as tile size and cycle duration.
+  - Structure 1: A full configuration file, including robot settings, environment parameters, and simulation variables. This structure defines robot specifications (type, speed, cutting mode, etc.), grid dimensions, and simulation details such as tile size and cycle duration.
 
-    Structure 2: Used to define the grid in Cartesian coordinates, listing the exact positions of blocked areas, isolated areas, and openings.
+  - Structure 2: Used to define the grid in Cartesian coordinates, listing the exact positions of blocked areas, isolated areas, and openings.
 
 The simulator uses these files to configure:
   - Robot: Autonomous robot settings.
