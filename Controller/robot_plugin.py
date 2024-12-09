@@ -1,16 +1,16 @@
 """ Copyright 2024 Sara Grecu
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-     https://www.apache.org/licenses/LICENSE-2.0
+    https://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License."""
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License."""
 
 import math
 import random
@@ -31,7 +31,6 @@ from Utils.utils import (
     contains_any_resource,
 )
 
-
 def pass_on_tassels(pos, grid, diameter, grass_tassels, agent, dim_tassel):
     """
     Increments the grass tassels of neighboring cells and updates the agent's autonomy.
@@ -43,7 +42,7 @@ def pass_on_tassels(pos, grid, diameter, grass_tassels, agent, dim_tassel):
     :param agent: The agent performing the action.
     :param dim_tassel: The dimension of each tassel.
     """
-    radius = math.ceil(diameter / 2)  # Calculate the radius for neighbor search
+    radius = math.ceil((diameter / dim_tassel) / 2)  # Calculate the radius for neighbor search
     neighbors = grid.get_neighborhood(
         pos, moore=False, include_center=True, radius=radius
     )  # Get neighboring positions
@@ -55,6 +54,9 @@ def pass_on_tassels(pos, grid, diameter, grass_tassels, agent, dim_tassel):
             ) == 0:  # Pass on the current tassel to the neighbor
                 break
 
+
+def calculate_movement_time(speed, distance):
+    return distance / speed
 
 def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tassel):
     """
@@ -70,9 +72,10 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tass
         grass_tassels, new_pos
     )  # Get the grass tassel at the new position
     if grass_tassel is not None:  # If there is a grass tassel
-        mowing_t = mowing_time(  # Calculate the mowing time
-            agent.speed, agent.get_autonomy(), cut_diameter, (dim_tassel * dim_tassel)
-        )
+        diagonal_distance = math.sqrt((dim_tassel ** 2) + (dim_tassel ** 2))
+
+        # mowing_t = calculate_movement_time(agent.speed, diagonal_distance)
+        mowing_t = mowing_time(agent.speed, agent.get_autonomy(), cut_diameter, dim_tassel * dim_tassel)
         if mowing_t > 0:
             agent.decrease_autonomy(mowing_t)  # Decrease the agent's autonomy
             agent.decrease_cycles(mowing_t)
@@ -82,7 +85,6 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tass
         else:
             return 0
 
-
 class DefaultMovementPlugin(MovementPlugin, ABC):
     """
     Default movement plugin for controlling the agent's movement in the grid.
@@ -90,7 +92,6 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
     :param movement_type: The type of movement ("random" or "systematic").
     :param grid: The grid object representing the environment.
     :param base_station_pos: Tuple representing the position of the base station.
-    :param boing: Unused parameter.
     :param cut_diameter: The cutting diameter of the mower.
     :param grid_width: The width of the grid.
     :param grid_height: The height of the grid.
@@ -108,56 +109,14 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
             grid_height: int,
             dim_tassel,
     ):
-        super().__init__(
-            grid, base_station_pos, grid_width, grid_height
-        )  # Initialize the superclass
+        super().__init__(grid, base_station_pos, grid_width, grid_height, dim_tassel)  # Initialize the superclass
 
+        self.real_pos = None
+        self.angle = None
         self.movement_type = movement_type  # Set the movement type
         self.boing = boing  # Set the boing parameter
         self.cut_diameter = cut_diameter  # Set the cutting diameter
         self.dim_tassel = dim_tassel  # Set the tassel dimension
-
-        self.directions = [  # Define the possible movement directions
-            (0, 1),
-            (1, 0),
-            (0, -1),
-            (1, -1),
-            (-1, -1),
-            (-1, 0),
-            (-1, 1),
-            (1, 1),
-        ]
-        self.dx_tassel = {  # Define the direction to tassel mappings
-            (1, 0): (0, -1),
-            (1, -1): (-1, -1),
-            (0, -1): (-1, 0),
-            (-1, -1): (-1, 1),
-            (-1, 0): (0, 1),
-            (-1, 1): (1, 1),
-            (0, 1): (1, 0),
-            (1, 1): (1, -1),
-        }
-        self.sx_tassel = {  # Define the opposite direction to tassel mappings
-            (1, 0): (0, 1),
-            (1, -1): (-1, -1),
-            (0, -1): (-1, 0),
-            (-1, -1): (0, -1),
-            (-1, 0): (-1, -1),
-            (-1, 1): (1, 0),
-            (0, 1): (1, 0),
-            (1, 1): (0, 1),
-        }
-
-        self.up_sx_tassel = {  # Define the upward opposite direction to tassel mappings
-            (1, 0): (1, 1),
-            (1, -1): (1, 0),
-            (0, -1): (1, -1),
-            (-1, -1): (0, -1),
-            (-1, 0): (-1, -1),
-            (-1, 1): (-1, 0),
-            (0, 1): (-1, 1),
-            (1, 1): (0, 1),
-        }
 
     def move(self, agent):
         """
@@ -166,149 +125,125 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         :param agent: The agent to be moved.
         """
         if self.movement_type == "random":  # If movement type is random
-            self.random_move(agent, agent.get_gt())  # Perform random movement
+            self.random_move(agent, agent.get_gt())
         elif self.movement_type == "systematic":  # If movement type is systematic
             self.systematic_move(agent, agent.get_gt())
 
     def random_move(self, agent, grass_tassels):
         """
-        Moves the agent randomly within the grid, updating its path and autonomy.
+        Moves the agent randomly using continuous angles for smooth movement.
 
         :param agent: The agent to be moved.
         :param grass_tassels: The grass tassels object.
         """
-        if agent.get_first():  # If it's the agent's first move
-            aux_pos = self.pos  # Get the current position
-            agent.dir = random.choice(self.directions)  # Choose a random direction
-            aux_pos = (
-                aux_pos[0] + agent.dir[0],
-                aux_pos[1] + agent.dir[1],
-            )  # Calculate the new position
+        if agent.get_first():  # First move, initialize angle randomly
+            self.angle = random.uniform(5, 175)  # Random angle in radians
+            agent.not_first()
+            dx = math.cos(self.angle) * self.dim_tassel
+            dy = math.sin(self.angle) * self.dim_tassel
+
+            aux_pos = (self.pos[0] + dx, self.pos[1] + dy)
+            agent.dir = (dx, dy)
 
             while (  # While the new position is out of bounds or already in the path taken
-                    not within_bounds(self.grid_width, self.grid_height, aux_pos)
-                    or aux_pos in agent.path_taken
+                    not self.is_valid_real_pos(aux_pos)
             ):
-                aux_pos = self.pos  # Reset the position
-                agent.dir = random.choice(
-                    self.directions
-                )  # Choose a new random direction
-                aux_pos = (
-                    aux_pos[0] + agent.dir[0],
-                    aux_pos[1] + agent.dir[1],
-                )  # Calculate the new position
-            self.pos = aux_pos  # Update the current position
-            agent.path_taken.add(self.pos)  # Add the new position to the path taken
-            agent.not_first()  # Mark that the first move is complete
+                self.angle = random.uniform(5, 175)
+                dx = math.cos(self.angle) * self.dim_tassel
+                dy = math.sin(self.angle) * self.dim_tassel
+                aux_pos = (self.pos[0] + dx, self.pos[1] + dy)
 
-        agent.dx = self.dx_tassel[
-            agent.dir
-        ]  # Update the agent's direction to tassel mapping
-        self.pos = (
-            self.pos[0] + agent.dir[0],
-            self.pos[1] + agent.dir[1],
-        )  # Update the current position
+        dx = math.cos(self.angle) * self.dim_tassel
+        dy = math.sin(self.angle) * self.dim_tassel
 
-        if within_bounds(
-                self.grid_width, self.grid_height, self.pos
-        ):  # If the new position is within bounds
-            if within_bounds(  # If the next position in the same direction is within bounds
+        new_pos = (self.pos[0] + dx, self.pos[1] + dy)
+        agent.dir = (dx, dy)
+
+        if self.is_valid_real_pos(new_pos):
+            discrete_pos = self.real_to_discrete(new_pos)
+            if not contains_any_resource(
+                    self.grid,
+                    discrete_pos,
+                    [CircledBlockedArea, SquaredBlockedArea],
                     self.grid_width,
                     self.grid_height,
-                    (self.pos[0] + agent.dir[0], self.pos[1] + agent.dir[1]),
-            ) and not contains_any_resource(  # And the next position doesn't contain any resources
-                self.grid,
-                (self.pos[0] + agent.dir[0], self.pos[1] + agent.dir[1]),
-                [CircledBlockedArea, SquaredBlockedArea],
-                self.grid_width,
-                self.grid_height,
+            ) and not (  # If the current position is not isolated without an opening or is a guideline
+                    IsolatedArea in self.grid.get_cell_list_contents(discrete_pos)
+                    and Opening not in self.grid.get_cell_list_contents(discrete_pos)
             ):
-                if (  # If the current position is not isolated without an opening or is a guideline
-                        not (
-                                IsolatedArea in self.grid.get_cell_list_contents(self.pos)
-                                and Opening not in self.grid.get_cell_list_contents(self.pos)
-                        )
-                        or GuideLine in self.grid.get_cell_list_contents(agent.dx)
-                        and CircledBlockedArea
-                        not in self.grid.get_cell_list_contents(self.pos)
-                        and SquaredBlockedArea
-                        not in self.grid.get_cell_list_contents(self.pos)
-                ):
-                    if (
-                            self.pos not in agent.path_taken
-                    ):  # If the position is not already in the path taken
-                        self.grid.move_agent(
-                            agent, self.pos
-                        )  # Move the agent to the new position
 
-                        pass_on_tassels(
-                            self.pos,
-                            self.grid,
-                            self.cut_diameter,
-                            grass_tassels,
-                            agent,
-                            self.dim_tassel,
-                        )
-                    else:  # If the position is already in the path taken
-                        aux_pos = self.pos  # Reset the position
-                        agent.dir = random.choice(
-                            self.directions
-                        )  # Choose a new random direction
-                        aux_pos = (
-                            aux_pos[0] + agent.dir[0],
-                            aux_pos[1] + agent.dir[1],
-                        )  # Calculate the new position
+                # Move the agent and update its path
+                self.grid.move_agent(agent, discrete_pos)
+                self.pos = new_pos
+                agent.path_taken.add(self.pos)
 
-                        while (  # While the new position is out of bounds, contains resources, or is isolated
-                                not within_bounds(
-                                self.grid_width, self.grid_height, aux_pos
-                                )
-                                or contains_any_resource(
-                            self.grid,
-                            aux_pos,
-                            [CircledBlockedArea, SquaredBlockedArea],
-                            self.grid_width,
-                            self.grid_height,
-                        )
-                                or (
-                                        IsolatedArea
-                                        in self.grid.get_cell_list_contents(self.pos)
-                                        and Opening
-                                        not in self.grid.get_cell_list_contents(self.pos)
-                                )
-                        ):
-                            aux_pos = self.pos  # Reset the position
-                            agent.dir = random.choice(
-                                self.directions
-                            )  # Choose a new random direction
-                            aux_pos = (
-                                aux_pos[0] + agent.dir[0],
-                                aux_pos[1] + agent.dir[1],
-                            )  # Calculate the new position
-                        self.pos = aux_pos  # Update the current position
+                # Update grass tassels
+                pass_on_tassels(
+                    discrete_pos,
+                    self.grid,
+                    self.cut_diameter,
+                    grass_tassels,
+                    agent,
+                    self.dim_tassel,
+                )
+            else:
+                self.bounce(agent, grass_tassels)  # Perform bouncing
+        else:
+            self.bounce(agent, grass_tassels)  # Perform bouncing
 
-                        self.grid.move_agent(
-                            agent, self.pos
-                        )  # Move the agent to the new position
-
-                        pass_on_tassels(
-                            self.pos,
-                            self.grid,
-                            self.cut_diameter,
-                            grass_tassels,
-                            agent,
-                            self.dim_tassel,
-                        )
-
-                else:  # If the position is isolated without an opening
-                    self.bounce(agent, grass_tassels)  # Bounce the agent
-            else:  # If the next position contains resources
-                self.bounce(agent, grass_tassels)  # Bounce the agent
-        else:  # If the new position is out of bounds
-            self.bounce(agent, grass_tassels)  # Bounce the agent
-
-    def systematic_move(self, agent, param):
+    def systematic_move(self, agent, grass_tassels):
         pass
+
+    def bounce(self, agent, grass_tassels):
+        """
+        Handles the bouncing behavior when encountering obstacles.
+
+        :param agent: The agent performing the action.
+        :param grass_tassels: The grass tassels object.
+        """
+        self.move_back(agent, grass_tassels)
+        bounce_angle = random.uniform(5, 175)
+
+        if self.boing == "random":
+            # Calculate new direction based on bounce angle
+            self.angle = (math.radians(bounce_angle) + self.angle) % 360
+            dx = (math.cos(self.angle)) * self.dim_tassel
+            dy = (math.sin(self.angle)) * self.dim_tassel
+
+            new_real_pos = (
+                self.pos[0] + dx,
+                self.pos[1] + dy
+            )
+            agent.dir = (dx, dy)
+
+            if self.is_valid_real_pos(new_real_pos):
+                self.real_pos = new_real_pos
+            else:
+                self.bounce(agent, grass_tassels)
+
+            self.pos = self.real_pos
+
+            pass_on_tassels(
+                self.real_to_discrete(self.real_pos),
+                self.grid,
+                self.cut_diameter,
+                grass_tassels,
+                agent,
+                self.dim_tassel,
+            )
+
+            # Move the agent and update its path
+            self.grid.move_agent(agent, self.real_to_discrete(self.real_pos))
+
+    def is_valid_real_pos(self, real_pos):
+        """
+        Checks if the real position is within the grid bounds.
+
+        :param real_pos: Tuple representing the real position.
+        :return: True if the real position is valid, False otherwise.
+        """
+        x, y = real_pos
+        return 0 <= x < self.grid_width * self.dim_tassel and 0 <= y < self.grid_height * self.dim_tassel
 
     def move_back(self, agent, grass_tassels):
         """
@@ -321,9 +256,9 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
             self.cut_diameter / self.dim_tassel
         )  # Calculate the number of tassels to move back
         for _ in range(num_tass_back):  # For each tassel to move back
-            aux_pos = (self.pos[0] - agent.dir[0]), (
-                    self.pos[1] - agent.dir[1]
-            )  # Calculate the new position
+            aux_real_pos = (self.pos[0] - agent.dir[0]), (self.pos[1] - agent.dir[1])
+            aux_pos = self.real_to_discrete(aux_real_pos)
+
             if (  # If the new position is within bounds and doesn't contain blocked areas
                     within_bounds(self.grid_width, self.grid_height, aux_pos)
                     and SquaredBlockedArea not in self.grid.get_cell_list_contents(aux_pos)
@@ -333,9 +268,11 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                     and Opening not in self.grid.get_cell_list_contents(aux_pos)
             )
             ):
-                self.pos = aux_pos
+                self.pos = aux_real_pos
+                # Move the agent and update its path
+                self.grid.move_agent(agent, aux_pos)
                 pass_on_tassels(
-                    self.pos,
+                    aux_pos,
                     self.grid,
                     self.cut_diameter,
                     grass_tassels,
@@ -345,14 +282,17 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
             else:
                 break
 
-    def bounce(self, agent, grass_tassels):
+    def real_to_discrete(self, real_pos):
         """
-        Moves the agent back and changes its direction.
+        Converts real coordinates to discrete grid coordinates.
 
-        :param agent: The agent to be moved.
-        :param grass_tassels: The grass tassels object.
+        :param real_pos: Tuple representing the real position.
+        :return: Tuple of discrete grid coordinates.
         """
-        self.move_back(agent, grass_tassels)
-        if self.boing == "random":
-            agent.dir = self.up_sx_tassel[agent.dir]
-        # else: if bounce mode is ping-pong it's not necessary to change the agent direction
+        x, y = real_pos
+
+        discrete_pos = math.ceil(x / self.dim_tassel), math.ceil(y / self.dim_tassel)
+        if within_bounds(self.grid_width, self.grid_height, discrete_pos):
+            return discrete_pos
+        else:
+            return math.floor(x / self.dim_tassel), math.floor(y / self.dim_tassel)

@@ -307,7 +307,7 @@ def run_model_with_parameters(env_plugins, robot_plugin, filename):
 
         for j in range(repetitions):
             # Run the experiment with the specified strategy.
-            runner(robot_plugin, grids[0], cycles, (0, int(grid_height / 3)), data_r, grid_width, grid_height, i, j,
+            runner(robot_plugin, grids[0], cycles, (int(grid_height / 3), 0), data_r, grid_width, grid_height, i, j,
                    cycle_data, f"perimeter_model{get_current_datetime()}.csv", dim_tassel, recharge)
 
             """

@@ -16,10 +16,11 @@ from abc import abstractmethod
 
 
 class MovementPlugin:
-    def __init__(self, grid, pos, grid_width, grid_height):
+    def __init__(self, grid, pos, grid_width, grid_height, dim_tassel):
         """
         Initialize the MovementPlugin with the grid and initial position.
 
+        :param dim_tassel:
         :param grid: The grid on which the movement will take place.
         :type grid: Any
         :param pos: The initial position of the agent on the grid.
@@ -30,7 +31,7 @@ class MovementPlugin:
         :type grid_height: int
         """
         self.grid = grid
-        self.pos = pos
+        self.pos = (pos[0] * dim_tassel, pos[1] * dim_tassel)
 
         # Calculate the width and height of the grid
         self.grid_width = grid_width

@@ -54,6 +54,7 @@ class Robot(Agent):
         self.robot_plugin = robot_plugin  # Plugin used for movement
         self.grass_tassels = grass_tassels  # Number of grass tassels to collect
         self.autonomy = autonomy  # Autonomy level of the robot
+
         self.cycles = cycles
 
         self.base_station = base_station
@@ -65,7 +66,6 @@ class Robot(Agent):
 
         self.first = True
         self.dir = None
-        self.dx = None
 
         self.end = False
         self.path_taken = set()
