@@ -84,9 +84,9 @@ Smarters allows functionality extension through plugins, which must be Python fi
 
 The simulation proceeds as follows:
 
-  1 - Generating maps and base station positions.
-  2 - Exploring positions based on blocked areas.
-  3 - Running the simulation for the duration specified in the JSON configuration.
+  - Generating maps and base station positions.
+  - Exploring positions based on blocked areas.
+  - Running the simulation for the duration specified in the JSON configuration.
 
 The robot operates with limited autonomy per cycle, moving until exhausted, after which it recharges. The process repeats until the predefined number of cycles is completed.
 
