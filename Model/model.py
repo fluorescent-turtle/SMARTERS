@@ -13,6 +13,7 @@
  limitations under the License."""
 import math
 import os
+import stat
 from datetime import datetime
 from pathlib import Path
 
