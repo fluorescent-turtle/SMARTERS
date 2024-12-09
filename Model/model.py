@@ -177,6 +177,7 @@ class Simulator(mesa.Model):
         output_dir = os.path.realpath("../View/")  # Define the output directory
         # Use Path to check if the directory exists, and create it if it doesn't
         Path(output_dir).mkdir(parents=True, exist_ok=True)
+        os.chmod(output_dir, stat.S_IRWXU)
 
         def reduce_ticks(ticks, step):
             return [tick if i % step == 0 else "" for i, tick in enumerate(ticks)]

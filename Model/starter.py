@@ -18,6 +18,7 @@ import logging
 import math
 import os
 import random
+import stat
 from datetime import datetime
 from pathlib import Path
 
@@ -174,6 +175,7 @@ def process_grid_data(
     df.insert(2, "x", [dim_tassel * i for i in range(grid_width)])
 
     output_dir = os.path.realpath("../View/")
+    os.chmod(output_dir, stat.S_IRWXU)
 
     # Use Path to check if the directory exists, and create it if it doesn't
     Path(output_dir).mkdir(parents=True, exist_ok=True)
