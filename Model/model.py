@@ -174,7 +174,7 @@ class Simulator(mesa.Model):
             value=[i * self.dim_tassel for i in range(self.grid.width)],
         )
 
-        output_dir = os.path.realpath("../smarters/View/")  # Define the output directory
+        output_dir = os.path.realpath("../View/")  # Define the output directory
         # Use Path to check if the directory exists, and create it if it doesn't
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 

@@ -173,7 +173,7 @@ def process_grid_data(
     df.insert(1, "ripetizione", repetition_index)
     df.insert(2, "x", [dim_tassel * i for i in range(grid_width)])
 
-    output_dir = os.path.realpath("../smarters/View/")
+    output_dir = os.path.realpath("../View/")
 
     # Use Path to check if the directory exists, and create it if it doesn't
     Path(output_dir).mkdir(parents=True, exist_ok=True)
