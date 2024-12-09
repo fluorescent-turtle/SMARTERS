@@ -61,3 +61,4 @@ The robot operates with limited autonomy, moving until exhausted. Autonomy is re
 After each autonomy and simulation cycle, the following are produced:
 - **Heatmap**
 - **CSV Files:** Containing the map matrix, tile information, and details on grass, blocked areas, and guiding lines.
+- **Histograms:** Displaying bars that indicate how many times the robot has passed over a tile (X-axis) and how many of these tiles there are (Y-axis).
