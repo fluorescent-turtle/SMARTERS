@@ -78,7 +78,7 @@ Smarters allows functionality extension through plugins, which must be Python fi
     python main.py --e environment_plugin.py --r robot_plugin.py --d data_file.json
 
 
-## Simulation and Output
+# Simulation and Output
 
 ## Simulation Cycle
 
