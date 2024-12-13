@@ -72,9 +72,6 @@ def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tass
         grass_tassels, new_pos
     )  # Get the grass tassel at the new position
     if grass_tassel is not None:  # If there is a grass tassel
-        diagonal_distance = math.sqrt((dim_tassel ** 2) + (dim_tassel ** 2))
-
-        # mowing_t = calculate_movement_time(agent.speed, diagonal_distance)
         mowing_t = mowing_time(agent.speed, agent.get_autonomy(), cut_diameter, dim_tassel * dim_tassel)
         if mowing_t > 0:
             agent.decrease_autonomy(mowing_t)  # Decrease the agent's autonomy

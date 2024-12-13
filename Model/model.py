@@ -175,7 +175,7 @@ class Simulator(mesa.Model):
             value=[i * self.dim_tassel for i in range(self.grid.width)],
         )
 
-        output_dir = os.path.realpath("../View/")  # Define the output directory
+        output_dir = os.path.realpath("../smarters/View/")  # Define the output directory
         # Use Path to check if the directory exists, and create it if it doesn't
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         os.chmod(output_dir, stat.S_IRWXU)
@@ -245,8 +245,8 @@ class Simulator(mesa.Model):
         plt.yscale('symlog', linthresh=1)  # 'linthresh' avoids over-compression of linear part near zero
 
         # Set x and y axis labels
-        plt.xlabel("Tassel Value")
-        plt.ylabel("Frequency")
+        plt.xlabel("Number of tassels")
+        plt.ylabel("Number of passes")
 
         # Adjust layout to prevent overlapping labels
         plt.tight_layout()
