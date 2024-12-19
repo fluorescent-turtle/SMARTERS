@@ -276,29 +276,19 @@ class BiggestCenterPairStrategy(StationGuidelinesStrategy):
         return None
 
 
-
-def mowing_time(speed_robot, autonomy_robot_seconds, cutting_diameter, total_area):
+def mowing_time(speed_robot, autonomy_robot_seconds, dim_tassel, k=1):
     """
     Estimates the time required for the robot to mow a given area based on the robot's
     speed, cutting diameter, and total area to mow.
 
     :param speed_robot: Speed of the robot (units per second).
     :param autonomy_robot_seconds: Robot's autonomy in seconds (battery life).
-    :param cutting_diameter: Diameter of the cutting area.
-    :param total_area: Total area to be mowed.
+    :param dim_tassel: Total area to be mowed.
+    :param k: Multiplier for the estimated time. Default is 1.
     :return: Estimated time in seconds for the mowing operation.
     """
-    # Cutting width is the same as the cutting diameter
-    cutting_width = cutting_diameter
-
-    # Estimate the number of passes needed (assuming straight lines)
-    passes_needed = math.ceil(total_area / cutting_width)
-
-    # Total distance covered
-    total_distance = passes_needed * (total_area / cutting_width)
-
     # Total time in seconds
-    total_time_seconds = total_distance / speed_robot
+    total_time_seconds = (dim_tassel / speed_robot) * k
 
     if total_time_seconds > autonomy_robot_seconds:
         print("Warning: The robot's autonomy might not be sufficient.")

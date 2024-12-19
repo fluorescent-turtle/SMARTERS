@@ -15,6 +15,7 @@ limitations under the License."""
 import math
 import random
 from abc import ABC
+import mesa.space as space
 
 from Controller.movement_plugin import MovementPlugin
 from Model.agents import (
@@ -22,7 +23,6 @@ from Model.agents import (
     SquaredBlockedArea,
     IsolatedArea,
     Opening,
-    GuideLine,
 )
 from Utils.utils import (
     within_bounds,
@@ -42,45 +42,23 @@ def pass_on_tassels(pos, grid, diameter, grass_tassels, agent, dim_tassel):
     :param agent: The agent performing the action.
     :param dim_tassel: The dimension of each tassel.
     """
-    radius = math.ceil((diameter / dim_tassel) / 2)  # Calculate the radius for neighbor search
+    radius = math.ceil((diameter / dim_tassel) / 2)  # Calculate the radius for neighbors search
     neighbors = grid.get_neighborhood(
-        pos, moore=False, include_center=True, radius=radius
-    )  # Get neighboring positions
+        pos=pos, include_center=True, radius=radius, moore=False
+    )
 
     for neighbor in neighbors:
-        if within_bounds(grid.width, grid.height, neighbor):
-            if pass_on_current_tassel(
-                grass_tassels, neighbor, agent, diameter, dim_tassel
-            ) == 0:  # Pass on the current tassel to the neighbor
-                break
+        norm_neighbor = (
+            neighbor[0] / dim_tassel if isinstance(neighbor[0], float) else neighbor[0],
+            neighbor[1] / dim_tassel if isinstance(neighbor[1], float) else neighbor[1],
+        )
 
+        grass_tassel = get_grass_tassel(
+            grass_tassels, norm_neighbor
+        )  # Get the grass tassel at the new position
 
-def calculate_movement_time(speed, distance):
-    return distance / speed
-
-def pass_on_current_tassel(grass_tassels, new_pos, agent, cut_diameter, dim_tassel):
-    """
-    Increments the grass tassel at the new position and updates the agent's autonomy and path taken.
-
-    :param grass_tassels: The grass tassels object.
-    :param new_pos: Tuple representing the new position of the agent.
-    :param agent: The agent performing the action.
-    :param cut_diameter: The cutting diameter of the mower.
-    :param dim_tassel: The dimension of each tassel.
-    """
-    grass_tassel = get_grass_tassel(
-        grass_tassels, new_pos
-    )  # Get the grass tassel at the new position
-    if grass_tassel is not None:  # If there is a grass tassel
-        mowing_t = mowing_time(agent.speed, agent.get_autonomy(), cut_diameter, dim_tassel * dim_tassel)
-        if mowing_t > 0:
-            agent.decrease_autonomy(mowing_t)  # Decrease the agent's autonomy
-            agent.decrease_cycles(mowing_t)
-            agent.path_taken.add(new_pos)  # Add the new position to the agent's path taken
-
-            grass_tassel.increment()  # Increment the grass tassel
-        else:
-            return 0
+        if grass_tassel is not None:  # If there is a grass tassel
+            grass_tassel.increment()
 
 class DefaultMovementPlugin(MovementPlugin, ABC):
     """
@@ -122,9 +100,16 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         :param agent: The agent to be moved.
         """
         if self.movement_type == "random":  # If movement type is random
-            self.random_move(agent, agent.get_gt())
+            self.random_move(agent, agent.grass_tassels)
         elif self.movement_type == "systematic":  # If movement type is systematic
-            self.systematic_move(agent, agent.get_gt())
+            self.systematic_move(agent, agent.grass_tassels)
+
+    def update_agent_autonomy(self, agent):
+        mowing_t = mowing_time(agent.speed, agent.aux_autonomy, self.dim_tassel)
+        agent.decrease_autonomy(
+            mowing_t)
+        agent.decrease_cycles(
+            mowing_t)
 
     def random_move(self, agent, grass_tassels):
         """
@@ -133,7 +118,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         :param agent: The agent to be moved.
         :param grass_tassels: The grass tassels object.
         """
-        if agent.get_first():  # First move, initialize angle randomly
+        if agent.first:  # First move, initialize angle randomly
             self.angle = random.uniform(5, 175)  # Random angle in radians
             agent.not_first()
             dx = math.cos(self.angle) * self.dim_tassel
@@ -172,6 +157,7 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                 # Move the agent and update its path
                 self.grid.move_agent(agent, discrete_pos)
                 self.pos = new_pos
+                self.update_agent_autonomy(agent)
                 agent.path_taken.add(self.pos)
 
                 # Update grass tassels
@@ -198,39 +184,40 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
         :param agent: The agent performing the action.
         :param grass_tassels: The grass tassels object.
         """
+        # Step 1: Move back a step to avoid obstacles
         self.move_back(agent, grass_tassels)
-        bounce_angle = random.uniform(5, 175)
 
         if self.boing == "random":
-            # Calculate new direction based on bounce angle
-            self.angle = (math.radians(bounce_angle) + self.angle) % 360
-            dx = (math.cos(self.angle)) * self.dim_tassel
-            dy = (math.sin(self.angle)) * self.dim_tassel
+            # Step 2: Calculate a new direction based on a bounce angle
+            bounce_angle = random.uniform(5, 175)  # Random angle for redirection
+            self.angle = (math.radians(bounce_angle) + self.angle) % (2 * math.pi)  # Update angle
 
-            new_real_pos = (
-                self.pos[0] + dx,
-                self.pos[1] + dy
-            )
-            agent.dir = (dx, dy)
+            # Step 3: Compute the new position
+            dx = math.cos(self.angle) * self.dim_tassel
+            dy = math.sin(self.angle) * self.dim_tassel
+            new_real_pos = (self.pos[0] + dx, self.pos[1] + dy)
 
+            # Step 4: Validate the new position
             if self.is_valid_real_pos(new_real_pos):
                 self.real_pos = new_real_pos
+                self.pos = self.real_pos
+                self.update_agent_autonomy(agent)
+
+                # Update the agent's position on the grid
+                self.grid.move_agent(agent, self.real_to_discrete(self.real_pos))
+
+                # Update grass tassels
+                pass_on_tassels(
+                    self.real_to_discrete(self.real_pos),
+                    self.grid,
+                    self.cut_diameter,
+                    grass_tassels,
+                    agent,
+                    self.dim_tassel,
+                )
             else:
+                # Retry bouncing if the new position is invalid
                 self.bounce(agent, grass_tassels)
-
-            self.pos = self.real_pos
-
-            pass_on_tassels(
-                self.real_to_discrete(self.real_pos),
-                self.grid,
-                self.cut_diameter,
-                grass_tassels,
-                agent,
-                self.dim_tassel,
-            )
-
-            # Move the agent and update its path
-            self.grid.move_agent(agent, self.real_to_discrete(self.real_pos))
 
     def is_valid_real_pos(self, real_pos):
         """
@@ -268,8 +255,10 @@ class DefaultMovementPlugin(MovementPlugin, ABC):
                 self.pos = aux_real_pos
                 # Move the agent and update its path
                 self.grid.move_agent(agent, aux_pos)
+                self.update_agent_autonomy(agent)
+
                 pass_on_tassels(
-                    aux_pos,
+                    self.real_to_discrete(self.pos),
                     self.grid,
                     self.cut_diameter,
                     grass_tassels,

@@ -76,15 +76,6 @@ class Robot(Agent):
         """
         self.robot_plugin.move(self)
 
-    def get_gt(self):
-        """
-        Get the number of grass tassels to collect.
-
-        :return: Number of grass tassels.
-        :rtype: int
-        """
-        return self.grass_tassels
-
     def decrease_autonomy(self, param):
         """
         Decrease the autonomy level of the robot.
@@ -93,15 +84,6 @@ class Robot(Agent):
         :type param: int
         """
         self.aux_autonomy -= param
-
-    def get_autonomy(self):
-        """
-        Get the current autonomy level of the robot.
-
-        :return: Current autonomy level.
-        :rtype: int
-        """
-        return self.aux_autonomy
 
     def reset_autonomy(self):
         """
@@ -114,15 +96,6 @@ class Robot(Agent):
         Indicate that this is not the first step.
         """
         self.first = False
-
-    def get_first(self):
-        """
-        Check if this is the first step.
-
-        :return: True if it is the first step, False otherwise.
-        :rtype: bool
-        """
-        return self.first
 
     def decrease_cycles(self, param):
         self.cycles -= param

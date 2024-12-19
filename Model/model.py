@@ -132,12 +132,12 @@ class Simulator(mesa.Model):
 
         # Main simulation loop
         while self.robot.cycles > 0:
-            while math.floor(self.robot.get_autonomy()) > 0:  # and self.robot.cycles > 0:
+            while math.floor(self.robot.aux_autonomy) > 0:  # and self.robot.cycles > 0:
                 self.robot.step()  # Move the robot until it runs out of autonomy
             self.robot.cycles -= self.recharge
 
             cycle += 1
-            stop = math.ceil(self.autonomy - self.robot.get_autonomy()) + beginning
+            stop = math.ceil(self.autonomy - self.robot.aux_autonomy) + beginning
             recharge = (self.recharge * 60) + stop
             self._process_cycle_data(cycle, beginning, stop, recharge)  # Process the data for the current cycle
             beginning = recharge + 60  # plus 1 minute
